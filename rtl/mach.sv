@@ -19,25 +19,39 @@ wire [1:0]      dut_dst;
 wire            dut_dreq, dut_dack;
 
 wire [31:0]     mem_a;
-wor [31:0]      mem_d_i;
+logic [31:0]    mem_d_i;
 wire [31:0]     mem_d_o;
 wire [3:0]      mem_ben;
 wire            mem_dan;
 wire            mem_mrqn;
 wire            mem_rw;
 wire            mem_bcystn;
-wor             mem_readyn;
+wire            mem_readyn;
 wand            mem_szrqn;
+
+wire [31:0]     rom_dbr_ctlr_di;
+wire            rom_dbr_readyn;
+wire            rom_dbr_szrqn;
 
 int             rom_ws, rom_dw;
 logic           rom_cen;
 logic [31:0]    rom_do;
 
+logic           ram_cen;
+wire [31:0]     ram_do;
+
+logic           unk_cen;
+
 initial begin
     $timeformat(-9, 0, " ns", 1);
 
+`ifndef VERILATOR
     $dumpfile("bios_tb.vcd");
     $dumpvars();
+`else
+    $dumpfile("bios_tb.verilator.fst");
+    $dumpvars();
+`endif
 end
 
 v810_exec dut
@@ -91,6 +105,7 @@ v810_mem dut_mem
    .D_I(mem_d_i),
    .D_O(mem_d_o),
    .BEn(mem_ben),
+   .ST(),
    .DAn(mem_dan),
    .MRQn(mem_mrqn),
    .RW(mem_rw),
@@ -99,9 +114,17 @@ v810_mem dut_mem
    .SZRQn(mem_szrqn)
    );
 
-assign mem_d_i = '0;
-assign mem_readyn = '0;
-assign mem_szrqn = '1;
+always @* begin
+    if (~rom_cen)
+        mem_d_i = rom_dbr_ctlr_di;
+    else if (~ram_cen)
+        mem_d_i = ram_do;
+    else
+        mem_d_i = '0;
+end
+
+assign mem_readyn = unk_cen & rom_dbr_readyn & ram_cen;
+assign mem_szrqn = ~unk_cen | rom_dbr_szrqn;
 
 data_bus_resizer rom_dbr
   (
@@ -111,9 +134,9 @@ data_bus_resizer rom_dbr
    .CE(CE),
    .CTLR_DAn(mem_dan),
    .CTLR_BEn(mem_ben),
-   .CTLR_READYn(mem_readyn),
-   .CTLR_SZRQn(mem_szrqn),
-   .CTLR_DI(mem_d_i),
+   .CTLR_READYn(rom_dbr_readyn),
+   .CTLR_SZRQn(rom_dbr_szrqn),
+   .CTLR_DI(rom_dbr_ctlr_di),
    .CTLR_DO(),
    .MEM_nCE(rom_cen),
    .MEM_DI(),
@@ -141,11 +164,12 @@ ram #(4, 32) dmem
    .nBE(mem_ben),
    .A(mem_a[5:2]),
    .DI(mem_d_o),
-   .DO(mem_d_i)
+   .DO(ram_do)
    );
 
 assign ram_cen = ~(~mem_mrqn & ~mem_a[31]);
 assign rom_cen = ~(~mem_mrqn & (mem_a[31:20] == 12'hFFF));
+assign unk_cen = ~(ram_cen & rom_cen);
 
 initial #0 begin
     rom_ws = 0;

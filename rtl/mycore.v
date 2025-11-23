@@ -22,6 +22,7 @@ module mycore
 );
 
 reg         cpu_ce;
+reg         reset_cpu;
 reg [31:0]  a;
 
 reg   [9:0] hc;
