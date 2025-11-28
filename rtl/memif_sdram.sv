@@ -68,23 +68,31 @@ assign mem_start_req = rom_start_req | ram_start_req;
 assign mem_readyn = rom_readyn & ram_readyn;
 
 always @(posedge SDRAM_CLK) begin
-  sdram_rd_d <= SDRAM_RD;
-  sdram_we_d <= SDRAM_WE;
+    sdram_rd_d <= SDRAM_RD;
+    sdram_we_d <= SDRAM_WE;
+end
 
-  if (sdram_rd_d & ~SDRAM_RD)
-    ract <= '1;
-  else if (ract & SDRAM_RD_RDY & ~mem_readyn)
-    ract <= '0;
+always @(posedge SDRAM_CLK) begin
+  if (~CPU_RESn) begin
+      ract <= '0;
+      wact <= '0;
+  end
+  else begin
+      if (sdram_rd_d & ~SDRAM_RD)
+          ract <= '1;
+      else if (ract & SDRAM_RD_RDY & ~mem_readyn)
+          ract <= '0;
 
-  if (sdram_we_d & ~SDRAM_WE)
-    wact <= '1;
-  else if (wact & SDRAM_WE_RDY & ~mem_readyn)
-    wact <= '0;
+      if (sdram_we_d & ~SDRAM_WE)
+          wact <= '1;
+      else if (wact & SDRAM_WE_RDY & ~mem_readyn)
+          wact <= '0;
+  end
 end
 
 always @(posedge CPU_CLK) if (CPU_CE) begin
-  rom_readyn <= ROM_CEn | ~(ract & SDRAM_RD_RDY);
-  ram_readyn <= RAM_CEn | ~((ract & SDRAM_RD_RDY) | (wact & SDRAM_WE_RDY));
+    rom_readyn <= ROM_CEn | ~(ract & SDRAM_RD_RDY);
+    ram_readyn <= RAM_CEn | ~((ract & SDRAM_RD_RDY) | (wact & SDRAM_WE_RDY));
 end
 
 assign ROM_DO = SDRAM_DOUT[15:0];
