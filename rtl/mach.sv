@@ -43,6 +43,7 @@ wire [31:0]     mem_a;
 logic [31:0]    mem_d_i;
 wire [31:0]     mem_d_o;
 wire [3:0]      mem_ben;
+wire [1:0]      mem_st;
 wire            mem_dan;
 wire            mem_mrqn;
 wire            mem_rw;
@@ -58,6 +59,7 @@ logic           ram_cen;
 wire [31:0]     ram_do;
 logic           ram_readyn;
 
+logic           io_cen;
 logic           unk_cen;
 
 v810_exec dut
@@ -111,7 +113,7 @@ v810_mem dut_mem
    .D_I(mem_d_i),
    .D_O(mem_d_o),
    .BEn(mem_ben),
-   .ST(),
+   .ST(mem_st),
    .DAn(mem_dan),
    .MRQn(mem_mrqn),
    .RW(mem_rw),
@@ -129,8 +131,8 @@ always @* begin
         mem_d_i = '0;
 end
 
-assign mem_readyn = unk_cen & rom_readyn & ram_readyn;
-assign mem_szrqn = ~unk_cen | rom_cen;
+assign mem_readyn = unk_cen & rom_readyn & ram_readyn & io_cen;
+assign mem_szrqn = ~unk_cen | (rom_cen & io_cen);
 
 assign rom_do = ROM_DO;
 assign rom_readyn = rom_cen | ROM_READYn;
@@ -140,7 +142,8 @@ assign ram_readyn = ram_cen | RAM_READYn;
 
 assign ram_cen = ~(~mem_mrqn & ~mem_a[31]);
 assign rom_cen = ~(~mem_mrqn & (mem_a[31:20] == 12'hFFF));
-assign unk_cen = ~(ram_cen & rom_cen);
+assign io_cen = ~(mem_mrqn & (~mem_bcystn | ~mem_dan) & (mem_st == 2'b10));
+assign unk_cen = ~(ram_cen & rom_cen & io_cen);
 
 assign CPU_BCYSTn = mem_bcystn;
 
@@ -154,5 +157,11 @@ assign RAM_WEn = mem_rw;
 assign RAM_BEn = mem_ben;
 
 assign A = mem_a;
+
+always @(posedge CLK) if (1 && CE) begin
+    if (~io_cen & ~mem_dan)
+        $display("%x %s %x", A, (mem_rw ? "R" : "w"),
+                 (emem_rw ? mem_d_i[15:0] : mem_d_o[15:0]));
+end
 
 endmodule
