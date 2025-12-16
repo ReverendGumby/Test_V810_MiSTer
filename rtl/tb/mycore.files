@@ -6,8 +6,11 @@ altddio_out.v
 ../sdram.v
 ../mach.sv
 ../huc6261.sv
+../huc6270.sv
+../fx_ga.sv
 
 ../v810/v810_pkg.sv
+../v810/v810_inex.sv
 ../v810/v810_exec.sv
 ../v810/v810_regfile.sv
 ../v810/v810_sysreg.sv

@@ -81,7 +81,7 @@ sdram sdram
 );
 
 //////////////////////////////////////////////////////////////////////
-// Compuer assembly
+// Computer assembly
 
 reg         cpu_ce;
 reg         reset_cpu;

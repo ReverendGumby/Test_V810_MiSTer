@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.4.0 (w)1999-2022 BSI
-[*] Sun Nov 30 04:27:03 2025
+[*] Tue Dec 16 06:34:24 2025
 [*]
 [dumpfile] "/Users/dhunter/src/mister/Test_V810_MiSTer/rtl/tb/mycore_tb.verilator.fst"
-[dumpfile_mtime] "Sun Nov 30 03:42:34 2025"
-[dumpfile_size] 12159746
+[dumpfile_mtime] "Tue Dec 16 06:33:18 2025"
+[dumpfile_size] 43672993
 [savefile] "/Users/dhunter/src/mister/Test_V810_MiSTer/rtl/tb/mycore_tb.verilator.gtkw"
-[timestart] 146610888
+[timestart] 0
 [size] 1333 600
 [pos] -1 -1
-*-9.522385 146612520 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+*-26.844271 82387420 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
 [markername] AA
 [markername] BB
 [markername] CC
@@ -40,92 +40,57 @@
 [treeopen] mycore_tb.mycore.
 [treeopen] mycore_tb.mycore.mach.
 [treeopen] mycore_tb.mycore.mach.cpu.
+[treeopen] mycore_tb.mycore.mach.ga.
+[treeopen] mycore_tb.mycore.mach.huc6261.
+[treeopen] mycore_tb.mycore.mach.huc6270_0.
 [sst_width] 255
 [signals_width] 228
 [sst_expanded] 1
 [sst_vpaned_height] 159
-@28
-mycore_tb.mycore.mach.huc6261.CSn
 @22
-mycore_tb.mycore.mach.huc6261.DO[15:0]
-mycore_tb.mycore.mach.A[31:0]
-@23
-mycore_tb.mycore.mach.cpu.D_I[31:0]
+mycore_tb.mycore.mach.cpu_a[31:0]
+mycore_tb.mycore.mach.cpu_d_i[31:0]
+mycore_tb.mycore.mach.cpu_d_o[31:0]
 @28
-mycore_tb.mycore.mach.io_cen
 mycore_tb.mycore.mach.ram_cen
 mycore_tb.mycore.mach.rom_cen
+mycore_tb.mycore.mach.io_cen
+mycore_tb.mycore.mach.ga_rdn
+mycore_tb.mycore.mach.ga_wrn
+@200
+-cpu
+@28
+mycore_tb.mycore.mach.cpu.INT
 @22
 mycore_tb.mycore.mach.cpu.eu.pc[31:0]
-@c00022
-mycore_tb.mycore.mach.cpu.eu.psw[31:0]
+@200
+-ga
 @28
-(0)mycore_tb.mycore.mach.cpu.eu.psw[31:0]
-(1)mycore_tb.mycore.mach.cpu.eu.psw[31:0]
-(2)mycore_tb.mycore.mach.cpu.eu.psw[31:0]
-(3)mycore_tb.mycore.mach.cpu.eu.psw[31:0]
-(4)mycore_tb.mycore.mach.cpu.eu.psw[31:0]
-(5)mycore_tb.mycore.mach.cpu.eu.psw[31:0]
-(6)mycore_tb.mycore.mach.cpu.eu.psw[31:0]
-(7)mycore_tb.mycore.mach.cpu.eu.psw[31:0]
-(8)mycore_tb.mycore.mach.cpu.eu.psw[31:0]
-(9)mycore_tb.mycore.mach.cpu.eu.psw[31:0]
-(10)mycore_tb.mycore.mach.cpu.eu.psw[31:0]
-(11)mycore_tb.mycore.mach.cpu.eu.psw[31:0]
-(12)mycore_tb.mycore.mach.cpu.eu.psw[31:0]
-(13)mycore_tb.mycore.mach.cpu.eu.psw[31:0]
-(14)mycore_tb.mycore.mach.cpu.eu.psw[31:0]
-(15)mycore_tb.mycore.mach.cpu.eu.psw[31:0]
-(16)mycore_tb.mycore.mach.cpu.eu.psw[31:0]
-(17)mycore_tb.mycore.mach.cpu.eu.psw[31:0]
-(18)mycore_tb.mycore.mach.cpu.eu.psw[31:0]
-(19)mycore_tb.mycore.mach.cpu.eu.psw[31:0]
-(20)mycore_tb.mycore.mach.cpu.eu.psw[31:0]
-(21)mycore_tb.mycore.mach.cpu.eu.psw[31:0]
-(22)mycore_tb.mycore.mach.cpu.eu.psw[31:0]
-(23)mycore_tb.mycore.mach.cpu.eu.psw[31:0]
-(24)mycore_tb.mycore.mach.cpu.eu.psw[31:0]
-(25)mycore_tb.mycore.mach.cpu.eu.psw[31:0]
-(26)mycore_tb.mycore.mach.cpu.eu.psw[31:0]
-(27)mycore_tb.mycore.mach.cpu.eu.psw[31:0]
-(28)mycore_tb.mycore.mach.cpu.eu.psw[31:0]
-(29)mycore_tb.mycore.mach.cpu.eu.psw[31:0]
-(30)mycore_tb.mycore.mach.cpu.eu.psw[31:0]
-(31)mycore_tb.mycore.mach.cpu.eu.psw[31:0]
-@1401200
--group_end
+mycore_tb.mycore.mach.ga.FX_GA_CSn
 @22
-mycore_tb.mycore.mach.cpu.eu.rf.rmem[0][31:0]
-mycore_tb.mycore.mach.cpu.eu.rf.rmem[1][31:0]
-mycore_tb.mycore.mach.cpu.eu.rf.rmem[2][31:0]
-mycore_tb.mycore.mach.cpu.eu.rf.rmem[3][31:0]
-mycore_tb.mycore.mach.cpu.eu.rf.rmem[4][31:0]
-mycore_tb.mycore.mach.cpu.eu.rf.rmem[5][31:0]
-mycore_tb.mycore.mach.cpu.eu.rf.rmem[6][31:0]
-mycore_tb.mycore.mach.cpu.eu.rf.rmem[7][31:0]
-mycore_tb.mycore.mach.cpu.eu.rf.rmem[8][31:0]
-mycore_tb.mycore.mach.cpu.eu.rf.rmem[9][31:0]
-mycore_tb.mycore.mach.cpu.eu.rf.rmem[10][31:0]
-mycore_tb.mycore.mach.cpu.eu.rf.rmem[11][31:0]
-mycore_tb.mycore.mach.cpu.eu.rf.rmem[12][31:0]
-mycore_tb.mycore.mach.cpu.eu.rf.rmem[13][31:0]
-mycore_tb.mycore.mach.cpu.eu.rf.rmem[14][31:0]
-mycore_tb.mycore.mach.cpu.eu.rf.rmem[15][31:0]
-mycore_tb.mycore.mach.cpu.eu.rf.rmem[16][31:0]
-mycore_tb.mycore.mach.cpu.eu.rf.rmem[17][31:0]
-mycore_tb.mycore.mach.cpu.eu.rf.rmem[18][31:0]
-mycore_tb.mycore.mach.cpu.eu.rf.rmem[19][31:0]
-mycore_tb.mycore.mach.cpu.eu.rf.rmem[20][31:0]
-mycore_tb.mycore.mach.cpu.eu.rf.rmem[21][31:0]
-mycore_tb.mycore.mach.cpu.eu.rf.rmem[22][31:0]
-mycore_tb.mycore.mach.cpu.eu.rf.rmem[23][31:0]
-mycore_tb.mycore.mach.cpu.eu.rf.rmem[24][31:0]
-mycore_tb.mycore.mach.cpu.eu.rf.rmem[25][31:0]
-mycore_tb.mycore.mach.cpu.eu.rf.rmem[26][31:0]
-mycore_tb.mycore.mach.cpu.eu.rf.rmem[27][31:0]
-mycore_tb.mycore.mach.cpu.eu.rf.rmem[28][31:0]
-mycore_tb.mycore.mach.cpu.eu.rf.rmem[29][31:0]
-mycore_tb.mycore.mach.cpu.eu.rf.rmem[30][31:0]
-mycore_tb.mycore.mach.cpu.eu.rf.rmem[31][31:0]
+mycore_tb.mycore.mach.ga.isr[6:0]
+mycore_tb.mycore.mach.ga.imr[6:0]
+@200
+-huc6261
+@28
+mycore_tb.mycore.mach.huc6261.CSn
+@24
+mycore_tb.mycore.mach.huc6261.row[8:0]
+@200
+-huc6270_0
+@28
+mycore_tb.mycore.mach.huc6270_0.CSn
+@22
+mycore_tb.mycore.mach.huc6270_0.DO[15:0]
+@29
+mycore_tb.mycore.mach.huc6270_0.vd
+@22
+mycore_tb.mycore.mach.huc6270_0.ie[3:0]
+@200
+-huc6270_1
+@28
+mycore_tb.mycore.mach.huc6270_1.CSn
+@22
+mycore_tb.mycore.mach.huc6270_1.ie[3:0]
 [pattern_trace] 1
 [pattern_trace] 0
