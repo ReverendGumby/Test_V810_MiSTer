@@ -31,8 +31,8 @@ module fx_ga
 
    output        FX_GA_CSn,
    output        HUC6261_CSn,
-   output        HUC6270_0_CSn,
-   output        HUC6270_1_CSn,
+   output        VDC0_CSn,
+   output        VDC1_CSn,
 
    // Memory control
    input         ROM_READYn,
@@ -41,6 +41,8 @@ module fx_ga
    // Device control
    output        WRn,
    output        RDn,
+   input         VDC0_BUSYn,
+   input         VDC1_BUSYn,
 
    // Device interrupts
    input [3:0]   DINT,
@@ -55,8 +57,9 @@ module fx_ga
 // Memory / I/O bus interface
 
 logic           unk_cen;
+logic           io_readyn;
 
-assign READYn = unk_cen & ROM_READYn & RAM_READYn & IO_CEn;
+assign READYn = unk_cen & ROM_READYn & RAM_READYn & io_readyn;
 assign SZRQn = ~unk_cen | (ROM_CEn & IO_CEn);
 
 //////////////////////////////////////////////////////////////////////
@@ -68,14 +71,20 @@ assign IO_CEn = ~((MRQn | (A[31:28] == 4'h8)) & (~BCYSTn | ~DAn)
                   & (ST == 2'b10));
 assign unk_cen = ~(RAM_CEn & ROM_CEn & IO_CEn);
 
-assign FX_GA_CSn = IO_CEn | ~(HUC6261_CSn & HUC6270_0_CSn & HUC6270_1_CSn);
+assign FX_GA_CSn = IO_CEn | ~(HUC6261_CSn & VDC0_CSn & VDC1_CSn);
 
 assign HUC6261_CSn   = ~(~IO_CEn & (A[27:8] == 20'h00003));
-assign HUC6270_0_CSn = ~(~IO_CEn & (A[27:8] == 20'h00004));
-assign HUC6270_1_CSn = ~(~IO_CEn & (A[27:8] == 20'h00005));
+assign VDC0_CSn = ~(~IO_CEn & (A[27:8] == 20'h00004));
+assign VDC1_CSn = ~(~IO_CEn & (A[27:8] == 20'h00005));
 
 assign WRn = IO_CEn | DAn | RW;
 assign RDn = IO_CEn | DAn | ~RW;
+
+always @* begin
+    if (~VDC0_CSn)              io_readyn = ~VDC0_BUSYn;
+    else if (~VDC1_CSn)         io_readyn = ~VDC1_BUSYn;
+    else                        io_readyn = IO_CEn;
+end
 
 //////////////////////////////////////////////////////////////////////
 // Register interface

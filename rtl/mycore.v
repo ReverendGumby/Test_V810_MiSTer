@@ -88,6 +88,7 @@ reg         reset_cpu;
 reg         cpu_resn;
 wire        cpu_bcystn;
 reg [31:0]  a;
+wire [8:0]  vdc0_vd, vdc1_vd;
 
 wire [19:0] rom_a;
 wire [15:0] rom_do;
@@ -136,7 +137,9 @@ mach mach
    .RAM_BEn(ram_ben),
    .RAM_READYn(ram_readyn),
 
-   .A(a)
+   .A(a),
+   .VDC0_VD(vdc0_vd),
+   .VDC1_VD(vdc1_vd)
    );
 
 memif_sdram memif_sdram
@@ -220,7 +223,7 @@ assign romwr_ack = sdram_we_ack;
 reg   [9:0] hc;
 reg   [9:0] vc;
 reg   [7:0] fc;
-reg [31:0]  pix;
+reg [23:0]  pix;
 
 always @(posedge clk_sys) begin
 	if(scandouble) ce_pix <= 1;
@@ -273,10 +276,12 @@ always @(posedge clk_sys) begin
 end
 
 always @(posedge clk_sys) begin
-  pix <= a;
+    pix[23:16] <= {a[31], vdc0_vd[8], vdc1_vd[8], a[6:2]};
+    pix[15:8]  <= {vdc0_vd[0], vdc0_vd[1], vdc0_vd[2], vdc0_vd[3], vdc0_vd[4], vdc0_vd[5], vdc0_vd[6], vdc0_vd[7]};
+    pix[7:0]   <= {vdc1_vd[0], vdc1_vd[1], vdc1_vd[2], vdc1_vd[3], vdc1_vd[4], vdc1_vd[5], vdc1_vd[6], vdc1_vd[7]};
 end
 
-assign R = pix[31:24];
+assign R = pix[23:16];
 assign G = pix[15:8];
 assign B = pix[7:0];
 

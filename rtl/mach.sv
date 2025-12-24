@@ -4,6 +4,8 @@
 //
 // This program is GPL licensed. See COPYING for the full license.
 
+/* verilator lint_off PINMISSING */
+
 module mach
   (
    input         CLK,
@@ -25,7 +27,9 @@ module mach
    output [3:0]  RAM_BEn,
    input         RAM_READYn,
 
-   output [31:0] A
+   output [31:0] A,
+   output [8:0]  VDC0_VD,
+   output [8:0]  VDC1_VD
    );
 
 wire [31:0]     cpu_a;
@@ -60,20 +64,33 @@ logic           unk_cen;
 logic           huc6261_csn;
 logic [15:0]    huc6261_do;
 
-logic           huc6270_0_csn;
-logic           huc6270_0_int;
-logic [15:0]    huc6270_0_do;
+logic           vdc0_csn;
+logic           vdc0_busyn;
+logic           vdc0_irqn;
+logic [15:0]    vdc0_do;
+logic [8:0]     vdc0_vd;
 
-logic           huc6270_1_csn;
-logic           huc6270_1_int;
-logic [15:0]    huc6270_1_do;
+wire [15:0]     vram0_a;
+wire [15:0]     vram0_di, vram0_do;
+wire            vram0_we;
+
+logic           vdc1_csn;
+logic           vdc1_busyn;
+logic           vdc1_irqn;
+logic [15:0]    vdc1_do;
+logic [8:0]     vdc1_vd;
+
+wire [15:0]     vram1_a;
+wire [15:0]     vram1_di, vram1_do;
+wire            vram1_we;
 
 logic           ga_wrn, ga_rdn;
 logic           ga_csn;
 logic [15:0]    ga_do;
 
-logic           pce;
-logic [8:0]     huc6261_row, huc6261_col;
+logic           pce, pce_negedge;
+logic           hs_posedge, hs_negedge;
+logic           vs_posedge, vs_negedge;
 
 v810 cpu
     (
@@ -99,9 +116,9 @@ v810 cpu
      );
 
 assign io_int[0] = '0; //huc6273_int;
-assign io_int[1] = huc6270_1_int;
+assign io_int[1] = ~vdc1_irqn;
 assign io_int[2] = '0; //huc6272_int;
-assign io_int[3] = huc6270_0_int;
+assign io_int[3] = ~vdc0_irqn;
 
 fx_ga ga
     (
@@ -126,14 +143,16 @@ fx_ga ga
 
      .FX_GA_CSn(ga_csn),
      .HUC6261_CSn(huc6261_csn),
-     .HUC6270_0_CSn(huc6270_0_csn),
-     .HUC6270_1_CSn(huc6270_1_csn),
+     .VDC0_CSn(vdc0_csn),
+     .VDC1_CSn(vdc1_csn),
 
      .ROM_READYn(rom_readyn),
      .RAM_READYn(ram_readyn),
 
      .WRn(ga_wrn),
      .RDn(ga_rdn),
+     .VDC0_BUSYn(vdc0_busyn),
+     .VDC1_BUSYn(vdc1_busyn),
 
      .DINT(io_int),
 
@@ -156,48 +175,105 @@ huc6261 huc6261
      .DO(huc6261_do),
 
      .PCE(pce),
-     .ROW(huc6261_row),
-     .COL(huc6261_col)
+     .PCE_NEGEDGE(pce_negedge),
+     .HSYNC_POSEDGE(hs_posedge),
+     .HSYNC_NEGEDGE(hs_negedge),
+     .VSYNC_POSEDGE(vs_posedge),
+     .VSYNC_NEGEDGE(vs_negedge)
      );
 
-huc6270 huc6270_0
+huc6270 vdc0
     (
-     .RESn(RESn),
      .CLK(CLK),
-     .CE(CE),
+     .RST_N(RESn),
+     .CLR_MEM('0),
+     .CPU_CE(CE),
 
-     .CSn(huc6270_0_csn),
-     .WRn(ga_wrn),
-     .RDn(ga_rdn),
-     .A2(cpu_a[2]),
+     .BYTEWORD('0),
+     .A({cpu_a[2], 1'b0}),
      .DI(cpu_d_o[15:0]),
-     .DO(huc6270_0_do),
+     .DO(vdc0_do),
+     .CS_N(vdc0_csn),
+     .WR_N(ga_wrn),
+     .RD_N(ga_rdn),
+     .BUSY_N(vdc0_busyn),
+     .IRQ_N(vdc0_irqn),
 
-     .INT(huc6270_0_int),
+     .DCK_CE(pce),
+     .DCK_CE_F(pce_negedge),
+     .HSYNC_F(hs_negedge),
+     .HSYNC_R(hs_posedge),
+     .VSYNC_F(vs_negedge),
+     .VSYNC_R(vs_posedge),
+     .VD(vdc0_vd),
+     .BORDER(),
+     .GRID(),
+     .SP64('0),
 
-     .PCE(pce),
-     .ROW(huc6261_row),
-     .COL(huc6261_col)
+     .RAM_A(vram0_a),
+     .RAM_DI(vram0_di),
+     .RAM_DO(vram0_do),
+     .RAM_WE(vram0_we),
+
+     .BG_EN('1),
+     .SPR_EN('1)
      );
 
-huc6270 huc6270_1
+dpram #(.addr_width(15), .data_width(16), .disable_value(0)) vram0
     (
-     .RESn(RESn),
+     .clock(CLK),
+     .address_a(vram0_a[14:0]),
+     .data_a(vram0_do),
+     .cs_a(~vram0_a[15]),
+     .wren_a(vram0_we),
+     .q_a(vram0_di)
+     );
+
+huc6270 vdc1
+    (
      .CLK(CLK),
-     .CE(CE),
+     .RST_N(RESn),
+     .CLR_MEM('0),
+     .CPU_CE(CE),
 
-     .CSn(huc6270_1_csn),
-     .WRn(ga_wrn),
-     .RDn(ga_rdn),
-     .A2(cpu_a[2]),
+     .BYTEWORD('0),
+     .A({cpu_a[2], 1'b0}),
      .DI(cpu_d_o[15:0]),
-     .DO(huc6270_1_do),
+     .DO(vdc1_do),
+     .CS_N(vdc1_csn),
+     .WR_N(ga_wrn),
+     .RD_N(ga_rdn),
+     .BUSY_N(vdc1_busyn),
+     .IRQ_N(vdc1_irqn),
 
-     .INT(huc6270_1_int),
+     .DCK_CE(pce),
+     .DCK_CE_F(pce_negedge),
+     .HSYNC_F(hs_negedge),
+     .HSYNC_R(hs_posedge),
+     .VSYNC_F(vs_negedge),
+     .VSYNC_R(vs_posedge),
+     .VD(vdc1_vd),
+     .BORDER(),
+     .GRID(),
+     .SP64('0),
 
-     .PCE(pce),
-     .ROW(huc6261_row),
-     .COL(huc6261_col)
+     .RAM_A(vram1_a),
+     .RAM_DI(vram1_di),
+     .RAM_DO(vram1_do),
+     .RAM_WE(vram1_we),
+
+     .BG_EN('1),
+     .SPR_EN('1)
+     );
+
+dpram #(.addr_width(15), .data_width(16), .disable_value(0)) vram1
+    (
+     .clock(CLK),
+     .address_a(vram1_a[14:0]),
+     .data_a(vram1_do),
+     .cs_a(~vram1_a[15]),
+     .wren_a(vram1_we),
+     .q_a(vram1_di)
      );
 
 always @* begin
@@ -214,10 +290,10 @@ end
 always @* begin
     if (~huc6261_csn)
         io_do = huc6261_do;
-    else if (~huc6270_0_csn)
-        io_do = huc6270_0_do;
-    else if (~huc6270_1_csn)
-        io_do = huc6270_1_do;
+    else if (~vdc0_csn)
+        io_do = vdc0_do;
+    else if (~vdc1_csn)
+        io_do = vdc1_do;
     else if (~ga_csn)
         io_do = ga_do;
     else
@@ -242,6 +318,8 @@ assign RAM_WEn = cpu_rw;
 assign RAM_BEn = cpu_ben;
 
 assign A = cpu_a;
+assign VDC0_VD = vdc0_vd;
+assign VDC1_VD = vdc1_vd;
 
 always @(posedge CLK) if (1 && CE) begin
     if (~io_cen & ~cpu_dan)

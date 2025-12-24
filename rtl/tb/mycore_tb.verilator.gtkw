@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.4.0 (w)1999-2022 BSI
-[*] Tue Dec 16 06:34:24 2025
+[*] Wed Dec 24 07:26:59 2025
 [*]
 [dumpfile] "/Users/dhunter/src/mister/Test_V810_MiSTer/rtl/tb/mycore_tb.verilator.fst"
-[dumpfile_mtime] "Tue Dec 16 06:33:18 2025"
-[dumpfile_size] 43672993
+[dumpfile_mtime] "Wed Dec 24 07:08:19 2025"
+[dumpfile_size] 65906593
 [savefile] "/Users/dhunter/src/mister/Test_V810_MiSTer/rtl/tb/mycore_tb.verilator.gtkw"
 [timestart] 0
 [size] 1333 600
 [pos] -1 -1
-*-26.844271 82387420 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+*-27.844255 72452780 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
 [markername] AA
 [markername] BB
 [markername] CC
@@ -42,7 +42,6 @@
 [treeopen] mycore_tb.mycore.mach.cpu.
 [treeopen] mycore_tb.mycore.mach.ga.
 [treeopen] mycore_tb.mycore.mach.huc6261.
-[treeopen] mycore_tb.mycore.mach.huc6270_0.
 [sst_width] 255
 [signals_width] 228
 [sst_expanded] 1
@@ -77,20 +76,24 @@ mycore_tb.mycore.mach.huc6261.CSn
 @24
 mycore_tb.mycore.mach.huc6261.row[8:0]
 @200
--huc6270_0
+-vdc0
 @28
-mycore_tb.mycore.mach.huc6270_0.CSn
+mycore_tb.mycore.mach.vdc0.CS_N
+@23
+mycore_tb.mycore.mach.vdc0.REGS[5][15:0]
+@28
+mycore_tb.mycore.mach.vdc0.IRQ_N
+mycore_tb.mycore.mach.vdc0.BG_OUT
+mycore_tb.mycore.mach.vdc0.VDISP
 @22
-mycore_tb.mycore.mach.huc6270_0.DO[15:0]
-@29
-mycore_tb.mycore.mach.huc6270_0.vd
-@22
-mycore_tb.mycore.mach.huc6270_0.ie[3:0]
+mycore_tb.mycore.mach.vdc0.VD[8:0]
 @200
--huc6270_1
+-vdc1
 @28
-mycore_tb.mycore.mach.huc6270_1.CSn
+mycore_tb.mycore.mach.vdc1.CS_N
+mycore_tb.mycore.mach.vdc1.BG_OUT
+mycore_tb.mycore.mach.vdc1.VDISP
 @22
-mycore_tb.mycore.mach.huc6270_1.ie[3:0]
+mycore_tb.mycore.mach.vdc1.VD[8:0]
 [pattern_trace] 1
 [pattern_trace] 0

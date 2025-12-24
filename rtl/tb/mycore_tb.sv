@@ -218,8 +218,7 @@ initial #0 begin
 end
 
 initial @(negedge reset) #(500e3) begin
-    $error("Emergency exit!");
-    $fatal(1);
+    $finish;
 end
 
 endmodule

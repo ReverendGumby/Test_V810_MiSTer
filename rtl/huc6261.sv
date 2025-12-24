@@ -20,8 +20,11 @@ module huc6261
      output [15:0] DO,
 
      output        PCE, // pixel clock enable
-     output [8:0]  ROW,
-     output [8:0]  COL
+     output        PCE_NEGEDGE,
+     output        HSYNC_POSEDGE,
+     output        HSYNC_NEGEDGE,
+     output        VSYNC_POSEDGE,
+     output        VSYNC_NEGEDGE
      );
 
 logic [4:0]     rsel;
@@ -80,6 +83,7 @@ end
 
 assign pcnt_wrap = pcnt == 3'd4;
 assign PCE = CE & pcnt_wrap;
+assign PCE_NEGEDGE = CE & ~|pcnt;
 
 //////////////////////////////////////////////////////////////////////
 // Video counter
@@ -102,7 +106,9 @@ always @(posedge CLK) if (PCE) begin
     end
 end
 
-assign ROW = row;
-assign COL = col;
+assign HSYNC_POSEDGE = col == 9'd300;
+assign HSYNC_NEGEDGE = col == 9'd310;
+assign VSYNC_POSEDGE = (row == 9'd256) & HSYNC_POSEDGE;
+assign VSYNC_NEGEDGE = (row == 9'd261) & HSYNC_POSEDGE;
 
 endmodule
