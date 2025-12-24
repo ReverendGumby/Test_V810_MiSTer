@@ -31,19 +31,19 @@ reg [data_width-1:0] mem [0:(1<<addr_width)-1];
 reg [data_width-1:0] q0, q1;
 
 always @(posedge clock) if (enable_a) begin
-    q0 <= mem[address_a];
-
     if (cs_a & wren_a) begin
-        mem[address_a] <= data_a;
+        mem[address_a] = data_a;
     end
+
+    q0 <= mem[address_a];
 end
 
 always @(posedge clock) if (enable_b) begin
-    q1 <= mem[address_b];
-
     if (cs_b & wren_b) begin
-        mem[address_b] <= data_b;
+        mem[address_b] = data_b;
     end
+
+    q1 <= mem[address_b];
 end
 
 always @* begin
