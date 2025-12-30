@@ -1,10 +1,13 @@
-// Placeholder for HuC6261 (NEW Iron Guanyin)
-//
-// Implement enough of the chip to appease the BIOS.
+// HuC6261 (NEW Iron Guanyin)
 //
 // Copyright (c) 2025 David Hunter
 //
 // This program is GPL licensed. See COPYING for the full license.
+
+// References:
+// - https://github.com/MiSTer-devel/TurboGrafx16_MiSTer/blob/master/rtl/huc6260.vhd
+// - PC-FXGA Authoring Software / GMAKER Starter Kit (Ver. 1.1) / Device Description: Hu6261
+
 
 module huc6261
     (
@@ -19,34 +22,100 @@ module huc6261
      input [15:0]  DI,
      output [15:0] DO,
 
+     // VDC interface
      output        PCE, // pixel clock enable
      output        PCE_NEGEDGE,
-     output        HSYNC_POSEDGE,
-     output        HSYNC_NEGEDGE,
-     output        VSYNC_POSEDGE,
-     output        VSYNC_NEGEDGE
+     output reg    HSYNC_POSEDGE,
+     output reg    HSYNC_NEGEDGE,
+     output reg    VSYNC_POSEDGE,
+     output reg    VSYNC_NEGEDGE,
+
+     input [8:0]   VDC0_VD,
+     input [8:0]   VDC1_VD,
+
+     // NTSC/YUV video output
+     output [7:0]  Y,
+     output [7:0]  U,
+     output [7:0]  V,
+     output        VSn,
+     output        HSn,
+     output        VBL,
+     output        HBL
      );
 
-logic [4:0]     rsel;
-logic [8:0]     row, col;
+/* -----\/----- EXCLUDED -----\/-----
+// From huc6260 (TurboGrafx16); CLK = 42.954545 MHz
+localparam [11:0] LEFT_BL_CLOCKS = 12'd456;
+localparam [11:0] DISP_CLOCKS = 12'd2160;
+localparam [11:0] LINE_CLOCKS = 12'd2730;
+localparam [11:0] HS_CLOCKS = 12'd192;
+localparam [11:0] HS_OFF = 12'd46;
+ -----/\----- EXCLUDED -----/\----- */
+// Adjusted for CLK = 50 MHz with PCE = 5 MHz
+localparam [11:0] LEFT_BL_CLOCKS = 12'd530;
+localparam [11:0] DISP_CLOCKS = 12'd2515;
+localparam [11:0] LINE_CLOCKS = 12'd3180;
+localparam [11:0] HS_CLOCKS = 12'd225;
+localparam [11:0] HS_OFF = 12'd55;
 
-logic [15:0]    dout;
+localparam [8:0] TOTAL_LINES = 9'd263;
+localparam [8:0] VS_LINES = 9'd3;
+localparam [8:0] TOP_BL_LINES_E = 9'd19;
+localparam [8:0] DISP_LINES_E = 9'd242;
+
+localparam [8:0] TOP_BL_LINES = TOP_BL_LINES_E;
+localparam [8:0] DISP_LINES = DISP_LINES_E;
+
+logic [4:0]     ar;
+logic [11:0]    h_cnt;
+logic [8:0]     v_cnt;
+
+logic [8:0]     cpa;
+logic [15:0]    cpdin, cpdout;
+logic           cpd_wr, cpd_wr_d;
+logic [7:0]     vdc_sp_cpao, vdc_bg_cpao;
 
 //////////////////////////////////////////////////////////////////////
 // Register interface
 
+logic [15:0]    dout;
+
+wire cpd_wr_end = ~cpd_wr & cpd_wr_d;
+
 always @(posedge CLK) if (CE) begin
+    cpd_wr <= '0;
+    cpd_wr_d <= cpd_wr;
+
     if (~RESn) begin
-        rsel <= '0;
+        ar <= '0;
+        cpa <= '0;
+        vdc_sp_cpao <= '0;
+        vdc_bg_cpao <= '0;
     end
     else begin
+        if (cpd_wr_end)
+            cpa <= cpa + 1'd1;
+
         if (~CSn & ~WRn) begin
             case (A2)
                 1'b0: begin
-                    rsel <= DI[4:0];
+                    ar <= DI[4:0];
                 end
                 1'b1: begin
-                end                
+                    case (ar)
+                        5'd01:
+                            cpa <= DI[8:0];
+                        5'd02: begin
+                            cpdin <= DI[15:0];
+                            cpd_wr <= '1;
+                        end
+                        5'd04: begin
+                            vdc_sp_cpao <= DI[15:8];
+                            vdc_bg_cpao <= DI[7:0];
+                        end
+                        default: ;
+                    endcase
+                end
             endcase
         end
     end
@@ -56,10 +125,15 @@ always @* begin
     dout = '0;
     case (A2)
         1'b0: begin
-            dout[4:0] = rsel;
-            dout[13:5] = row;
+            dout[4:0] = ar;
+            dout[13:5] = v_cnt;
         end
         1'b1: begin
+            case (ar)
+                5'd03:
+                    dout[15:0] = cpdout;
+                default: ;
+            endcase
         end
     endcase
 end
@@ -83,32 +157,134 @@ end
 
 assign pcnt_wrap = pcnt == 3'd4;
 assign PCE = CE & pcnt_wrap;
-assign PCE_NEGEDGE = CE & ~|pcnt;
+assign PCE_NEGEDGE = CE & ~|pcnt; // TODO: Should be 180deg after PCE
 
 //////////////////////////////////////////////////////////////////////
 // Video counter
 
-always @(posedge CLK) if (PCE) begin
+wire h_wrap = h_cnt == (LINE_CLOCKS - 1'd1);
+wire v_wrap = v_cnt == (TOTAL_LINES - 1'd1);
+
+always @(posedge CLK) begin
     if (~RESn) begin
-        col <= '0;
-        row <= '0;
+        h_cnt <= '0;
+        v_cnt <= '0;
     end
     else begin
-        if (col < 9'd317)
-            col <= col + 1'd1;
+        if (~h_wrap)
+            h_cnt <= h_cnt + 1'd1;
         else begin
-            col <= '0;
-            if (row < 9'd263)
-                row <= row + 1'd1;
+            h_cnt <= '0;
+            if (~v_wrap)
+                v_cnt <= v_cnt + 1'd1;
             else
-                row <= '0;
+                v_cnt <= '0;
         end
     end
 end
 
-assign HSYNC_POSEDGE = col == 9'd300;
-assign HSYNC_NEGEDGE = col == 9'd310;
-assign VSYNC_POSEDGE = (row == 9'd256) & HSYNC_POSEDGE;
-assign VSYNC_NEGEDGE = (row == 9'd261) & HSYNC_POSEDGE;
+localparam [11:0] HSYNC_START_POS = 11'd8 - 1'd1;
+localparam [11:0] HSYNC_END_POS = 11'd8 + 11'd540 - 1'd1;
+
+//////////////////////////////////////////////////////////////////////
+// Video mixer
+
+logic             vdc_key;
+logic [8:0]       vdc_vd;
+logic [8:1]       vdc_cpao;
+logic [8:0]       vdc_cpa;
+logic [8:0]       mix_cpa_out;
+
+wire vdc0_key = VDC0_VD[7:0] == '0;
+wire vdc1_key = VDC1_VD[7:0] == '0;
+
+// "Upper" 6270 has priority over "lower".
+assign vdc_key = vdc0_key & vdc1_key;
+assign vdc_vd = vdc1_key ? VDC0_VD : VDC1_VD;
+
+// Palette RAM address generator
+assign vdc_cpao = vdc_vd[8] ? vdc_sp_cpao : vdc_bg_cpao;
+assign vdc_cpa = {vdc_cpao, 1'b0} + {1'b0, vdc_vd[7:0]};
+
+// Chromakey (transparency) priority encoder
+always @* begin
+    mix_cpa_out = '0;
+    if (~vdc_key)
+        mix_cpa_out = vdc_cpa;
+end
+
+//////////////////////////////////////////////////////////////////////
+// Color palette RAM
+
+logic [15:0]    cp_out;
+
+dpram #(.addr_width(9), .data_width(16)) cpram
+   (
+    .clock(CLK),
+    .address_a(cpa),
+    .data_a(cpdin),
+    .enable_a(1'b1),
+    .wren_a(cpd_wr),
+    .q_a(cpdout),
+    .cs_a(1'b1),
+
+    .address_b(mix_cpa_out),
+    .data_b('0),
+    .enable_b(1'b1),
+    .wren_b('0),
+    .q_b(cp_out),
+    .cs_b(1'b1)
+    );
+
+//////////////////////////////////////////////////////////////////////
+// Sync generators
+
+logic           hbl_ff, vbl_ff;
+
+// These syncs are for the VDCs.
+always @(posedge CLK) begin
+    HSYNC_NEGEDGE <= (HSYNC_NEGEDGE & ~PCE) | (h_cnt == HSYNC_START_POS);
+    HSYNC_POSEDGE <= (HSYNC_POSEDGE & ~PCE) | (h_cnt == HSYNC_END_POS);
+    VSYNC_NEGEDGE <= (VSYNC_NEGEDGE & ~PCE) | ((v_cnt == VS_LINES - 1'd1) & h_wrap);
+    VSYNC_POSEDGE <= (VSYNC_POSEDGE & ~PCE) | (v_wrap & h_wrap);
+end
+
+// These syncs are for the actual video output.
+always @(posedge CLK) begin
+    if (h_cnt == HS_OFF)
+        HSn <= '0;
+    else if (h_cnt == HS_OFF + HS_CLOCKS)
+        HSn <= '1;
+
+    if (v_cnt == 9'd0)
+        VSn <= '0;
+    else if (v_cnt == VS_LINES)
+        VSn <= '1;
+end
+
+// Blanking periods
+always @(posedge CLK) begin
+    if (h_cnt == LEFT_BL_CLOCKS)
+        hbl_ff <= '0;
+    else if (h_cnt == LEFT_BL_CLOCKS + DISP_CLOCKS)
+        hbl_ff <= '1;
+
+    if (v_cnt == TOP_BL_LINES)
+        vbl_ff <= '0;
+    else if (v_cnt == TOP_BL_LINES + DISP_LINES)
+        vbl_ff <= '1;
+end
+
+//////////////////////////////////////////////////////////////////////
+// Final output
+
+always @(posedge CLK) if (PCE) begin
+    VBL <= vbl_ff;
+    HBL <= hbl_ff;
+
+    Y <= cp_out[15:8];
+    U <= {cp_out[7:4], cp_out[6:4], cp_out[6]};
+    V <= {cp_out[3:0], cp_out[2:0], cp_out[2]};
+end
 
 endmodule

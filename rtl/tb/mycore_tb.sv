@@ -217,7 +217,7 @@ initial #0 begin
     reset = 0;
 end
 
-initial @(negedge reset) #(210e3) begin
+initial @(negedge reset) #(500e3) begin
     $finish;
 end
 

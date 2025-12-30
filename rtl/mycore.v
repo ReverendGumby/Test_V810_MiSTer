@@ -88,7 +88,14 @@ reg         reset_cpu;
 reg         cpu_resn;
 wire        cpu_bcystn;
 reg [31:0]  a;
-wire [8:0]  vdc0_vd, vdc1_vd;
+wire        vid_pce;
+wire [7:0]  vid_y;
+wire [7:0]  vid_u;
+wire [7:0]  vid_v;
+wire        vid_vsn;
+wire        vid_hsn;
+wire        vid_vbl;
+wire        vid_hbl;
 
 wire [19:0] rom_a;
 wire [15:0] rom_do;
@@ -138,8 +145,15 @@ mach mach
    .RAM_READYn(ram_readyn),
 
    .A(a),
-   .VDC0_VD(vdc0_vd),
-   .VDC1_VD(vdc1_vd)
+
+   .VID_PCE(vid_pce),
+   .VID_Y(vid_y),
+   .VID_U(vid_u),
+   .VID_V(vid_v),
+   .VID_VSn(vid_vsn),
+   .VID_HSn(vid_hsn),
+   .VID_VBL(vid_vbl),
+   .VID_HBL(vid_hbl)
    );
 
 memif_sdram memif_sdram
@@ -220,6 +234,8 @@ assign romwr_ack = sdram_we_ack;
 //////////////////////////////////////////////////////////////////////
 // Video output
 
+`ifdef GEN_VID_TIMING
+
 reg   [9:0] hc;
 reg   [9:0] vc;
 reg   [7:0] fc;
@@ -284,5 +300,18 @@ end
 assign R = pix[23:16];
 assign G = pix[15:8];
 assign B = pix[7:0];
+
+`else // GEN_VID_TIMING
+
+assign ce_pix = vid_pce;
+assign R = vid_u;
+assign G = vid_y;
+assign B = vid_v;
+assign HBlank = vid_hbl;
+assign VBlank = vid_vbl;
+assign HSync = ~vid_hsn;
+assign VSync = ~vid_vsn;
+
+`endif
 
 endmodule

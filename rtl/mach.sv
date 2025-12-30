@@ -28,8 +28,15 @@ module mach
    input         RAM_READYn,
 
    output [31:0] A,
-   output [8:0]  VDC0_VD,
-   output [8:0]  VDC1_VD
+
+   output        VID_PCE,
+   output [7:0]  VID_Y,
+   output [7:0]  VID_U,
+   output [7:0]  VID_V,
+   output        VID_VSn,
+   output        VID_HSn,
+   output        VID_VBL,
+   output        VID_HBL
    );
 
 wire [31:0]     cpu_a;
@@ -208,7 +215,18 @@ huc6261 vce
      .HSYNC_POSEDGE(hs_posedge),
      .HSYNC_NEGEDGE(hs_negedge),
      .VSYNC_POSEDGE(vs_posedge),
-     .VSYNC_NEGEDGE(vs_negedge)
+     .VSYNC_NEGEDGE(vs_negedge),
+
+     .VDC0_VD(vdc0_vd),
+     .VDC1_VD(vdc1_vd),
+
+     .Y(VID_Y),
+     .U(VID_U),
+     .V(VID_V),
+     .VSn(VID_VSn),
+     .HSn(VID_HSn),
+     .VBL(VID_VBL),
+     .HBL(VID_HBL)
      );
 
 huc6270 vdc0
@@ -454,11 +472,9 @@ fake_cd fake_cd
      );
 
 //////////////////////////////////////////////////////////////////////
-// Video interface
 
 assign A = cpu_a;
-assign VDC0_VD = vdc0_vd;
-assign VDC1_VD = vdc1_vd;
+assign VID_PCE = pce;
 
 //////////////////////////////////////////////////////////////////////
 
