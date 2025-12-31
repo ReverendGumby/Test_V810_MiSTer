@@ -3,7 +3,7 @@ use IEEE.std_logic_1164.all;
 use ieee.numeric_std.all;
 library work;
 
-entity huc6270 is
+entity HUC6270 is
 	port( 
 		CLK		: in std_logic;
 		RST_N		: in std_logic;
@@ -222,24 +222,24 @@ architecture rtl of HUC6270 is
 	signal SPR_CH3 		: std_logic_vector(15 downto 0);
 	signal SPR_RAM_ADDR	: std_logic_vector(15 downto 0);
 	
-	type Sprite_r is record
-		X    		: std_logic_vector(9 downto 0);
-		Y    		: std_logic_vector(9 downto 0);
-		PC			: std_logic_vector(10 downto 0);
-		CG     	: std_logic;
-		PAL		: std_logic_vector(3 downto 0);
-		PRIO		: std_logic; 
-		CGX		: std_logic; 
-		CGY     	: std_logic_vector(1 downto 0);
-		HF     	: std_logic;
-		VF     	: std_logic;
-		SPR0    	: std_logic;
-		TOP    	: std_logic;
-		BOTTOM   : std_logic;
-	end record;
-	type SpriteCache_t is array (0 to 63) of Sprite_r;
-	signal SPR_CACHE		: SpriteCache_t;
-	signal SPR				: Sprite_r;
+	--! type Sprite_r is record
+	--! 	X    		: std_logic_vector(9 downto 0);
+	--! 	Y    		: std_logic_vector(9 downto 0);
+	--! 	PC			: std_logic_vector(10 downto 0);
+	--! 	CG     	: std_logic;
+	--! 	PAL		: std_logic_vector(3 downto 0);
+	--! 	PRIO		: std_logic; 
+	--! 	CGX		: std_logic; 
+	--! 	CGY     	: std_logic_vector(1 downto 0);
+	--! 	HF     	: std_logic;
+	--! 	VF     	: std_logic;
+	--! 	SPR0    	: std_logic;
+	--! 	TOP    	: std_logic;
+	--! 	BOTTOM   : std_logic;
+	--! end record;
+	--! type SpriteCache_t is array (0 to 63) of Sprite_r;
+	--! signal SPR_CACHE		: SpriteCache_t;
+	--! signal SPR				: Sprite_r;
 	signal SPR_EVAL 		: std_logic;
 	signal SPR_EVAL_X		: unsigned(7 downto 0);
 	signal SPR_EVAL_DONE : std_logic;
@@ -610,7 +610,8 @@ begin
 					when others =>
 						case FDOT_CNT(1 downto 0) is
 							when "11" => 
-								case unsigned(TILE_CNT(0 downto 0)&FDOT_CNT(2 downto 2)) is
+								--! case unsigned(TILE_CNT(0 downto 0)&FDOT_CNT(2 downto 2)) is
+								case FDOT_CNT(3 downto 2) is
 									when "00" => SLOT <= SG0;
 									when "01" => SLOT <= SG1;
 									when "10" => SLOT <= SG2;
@@ -632,12 +633,12 @@ begin
 	end process;
 	
 	--BG
-	process(CLK, RST_N, SLOT, BG_X, OFS_Y, OFS_X, SCREEN, BG_BAT_CC)
+	process(SLOT, BG_X, OFS_Y, OFS_X, SCREEN, BG_BAT_CC)
 	variable BG_OFS_X : unsigned(9 downto 0);
 	variable BG_OFS_Y : unsigned(8 downto 0);
-	variable NEW_OFS_Y : unsigned(8 downto 0);
-	begin
-		BG_OFS_X := resize(BG_X + unsigned(OFS_X), BG_OFS_X'length);
+    begin
+		--! BG_OFS_X := resize(BG_X + unsigned(OFS_X), BG_OFS_X'length);
+		BG_OFS_X := resize(BG_X + unsigned(OFS_X), 10);
 		if SCREEN(2) = '0' then
 			BG_OFS_Y := "0" & OFS_Y(7 downto 0);
 		else
@@ -658,7 +659,11 @@ begin
 			when others =>
 				BG_RAM_ADDR <= (others=>'0');
 		end case;
+    end process;
 				
+	process(CLK, RST_N)
+	variable NEW_OFS_Y : unsigned(8 downto 0);
+	begin
 		if RST_N = '0' then
 			BG_X <= (others=>'0');
 			OFS_X <= (others=>'0');
@@ -734,32 +739,31 @@ begin
 	DMAS_SAT_WE <= DCK_CE when DMAS_EXEC = '1' and SLOT = CPU else '0'; 
 	SAT_ADDR <= std_logic_vector(SPR_EVAL_X) when CLR_WE = '0' else std_logic_vector(CLR_A);
 	
-	SAT : entity work.dpramv generic map (8,16)
-	port map(
-		clock		=> CLK,
+	--! SAT : entity work.dpram generic map (8,16)
+	--! port map(
+	--! 	clock		=> CLK,
 		
-		data_a	=> RAM_DI,
-		address_a=> DMAS_SAT_ADDR,
-		wren_a	=> DMAS_SAT_WE,
+	--! 	data_a	=> RAM_DI,
+	--! 	address_a=> DMAS_SAT_ADDR,
+	--! 	wren_a	=> DMAS_SAT_WE,
 		
-		address_b=> SAT_ADDR,
-		data_b   => (others => '0'),
-		wren_b   => CLR_WE,
-		q_b		=> SAT_Q
-	);
+	--! 	address_b=> SAT_ADDR,
+	--! 	data_b   => (others => '0'),
+	--! 	wren_b   => CLR_WE,
+	--! 	q_b		=> SAT_Q
+	--! );
 
-	CLR_A  <= CLR_A + 1 when rising_edge(CLK);
-	CLR_WE <= CLR_MEM   when rising_edge(CLK);
+	--! CLR_A  <= CLR_A + 1 when rising_edge(CLK);
+	--! CLR_WE <= CLR_MEM   when rising_edge(CLK);
 
 	SPR <= SPR_CACHE(to_integer(SPR_FETCH_CNT(5 downto 0)));
-	process(CLK, RST_N, SLOT, RC_CNT, SPR, SPR_FETCH_W)
-	variable SPR_H : std_logic_vector(5 downto 0);
+	process(SLOT, RC_CNT, SPR, SPR_FETCH_W)
 	variable SPR_OFS_Y : unsigned(5 downto 0);
 	variable SPR_LINE : unsigned(5 downto 0);
 	variable SPR_TILE_N : std_logic_vector(2 downto 0);
 	begin
 		SPR_OFS_Y := RC_CNT(5 downto 0) - unsigned(SPR.Y(5 downto 0)) - 1;
-		SPR_LINE := SPR_OFS_Y xor (5 downto 0 => SPR.VF);
+		--! SPR_LINE := SPR_OFS_Y xor (5 downto 0 => SPR.VF);
 		if SPR.CGX = '0' then
 			SPR_TILE_N(0) := SPR.PC(1);
 		else
@@ -783,7 +787,11 @@ begin
 			when others =>
 				SPR_RAM_ADDR <= (others=>'0');
 		end case;
+    end process;
 		
+	process(CLK, RST_N)
+	variable SPR_H : std_logic_vector(5 downto 0);
+	begin
 		if RST_N = '0' then
 			SPR_EVAL <= '0';
 			SPR_EVAL_X <= (others=>'0');
@@ -791,7 +799,7 @@ begin
 			SPR_EVAL_FULL <= '0';
 			SPR_EVAL_CNT <= (others=>'0');
 			SPR_FIND <= '0';
-			SPR_CACHE <= (others=>((others=>'0'),(others=>'0'),(others=>'0'),'0',"00",'0','0',"00",'0','0','0','0','0'));
+			--! SPR_CACHE <= (others=>((others=>'0'),(others=>'0'),(others=>'0'),'0',"00",'0','0',"00",'0','0','0','0','0'));
 			SPR_Y <= (others=>'0');
 			SPR_X <= (others=>'0');
 			SPR_PC <= (others=>'0');
@@ -855,31 +863,31 @@ begin
 								if RC_CNT >= unsigned(SPR_Y) and RC_CNT <= unsigned(SPR_Y) + unsigned(SPR_H) then
 									SPR_FIND <= '1';
 									if SPR_EVAL_FULL = '0' then
-										SPR_CACHE(to_integer(SPR_EVAL_CNT(5 downto 0))).X <= SPR_X;
-										SPR_CACHE(to_integer(SPR_EVAL_CNT(5 downto 0))).Y <= SPR_Y;
-										SPR_CACHE(to_integer(SPR_EVAL_CNT(5 downto 0))).PC <= SPR_PC;
-										SPR_CACHE(to_integer(SPR_EVAL_CNT(5 downto 0))).CG <= SPR_CG;
-										SPR_CACHE(to_integer(SPR_EVAL_CNT(5 downto 0))).PAL <= SAT_Q(3 downto 0);
-										SPR_CACHE(to_integer(SPR_EVAL_CNT(5 downto 0))).PRIO <= SAT_Q(7);
-										SPR_CACHE(to_integer(SPR_EVAL_CNT(5 downto 0))).CGX <= SAT_Q(8);
-										SPR_CACHE(to_integer(SPR_EVAL_CNT(5 downto 0))).CGY <= SAT_Q(13 downto 12);
-										SPR_CACHE(to_integer(SPR_EVAL_CNT(5 downto 0))).HF <= SAT_Q(11);
-										SPR_CACHE(to_integer(SPR_EVAL_CNT(5 downto 0))).VF <= SAT_Q(15);
-										if SPR_EVAL_X(7 downto 2) = "000000" then
-											SPR_CACHE(to_integer(SPR_EVAL_CNT(5 downto 0))).SPR0 <= '1';
-										else
-											SPR_CACHE(to_integer(SPR_EVAL_CNT(5 downto 0))).SPR0 <= '0';
-										end if;
-										if RC_CNT = unsigned(SPR_Y) then
-											SPR_CACHE(to_integer(SPR_EVAL_CNT(5 downto 0))).TOP <= '1';
-										else
-											SPR_CACHE(to_integer(SPR_EVAL_CNT(5 downto 0))).TOP <= '0';
-										end if;
-										if RC_CNT = unsigned(SPR_Y) + unsigned(SPR_H) then
-											SPR_CACHE(to_integer(SPR_EVAL_CNT(5 downto 0))).BOTTOM <= '1';
-										else
-											SPR_CACHE(to_integer(SPR_EVAL_CNT(5 downto 0))).BOTTOM <= '0';
-										end if;
+--!										SPR_CACHE(to_integer(SPR_EVAL_CNT(5 downto 0))).X <= SPR_X;
+--!										SPR_CACHE(to_integer(SPR_EVAL_CNT(5 downto 0))).Y <= SPR_Y;
+--!										SPR_CACHE(to_integer(SPR_EVAL_CNT(5 downto 0))).PC <= SPR_PC;
+--!										SPR_CACHE(to_integer(SPR_EVAL_CNT(5 downto 0))).CG <= SPR_CG;
+--!										SPR_CACHE(to_integer(SPR_EVAL_CNT(5 downto 0))).PAL <= SAT_Q(3 downto 0);
+--!										SPR_CACHE(to_integer(SPR_EVAL_CNT(5 downto 0))).PRIO <= SAT_Q(7);
+--!										SPR_CACHE(to_integer(SPR_EVAL_CNT(5 downto 0))).CGX <= SAT_Q(8);
+--!										SPR_CACHE(to_integer(SPR_EVAL_CNT(5 downto 0))).CGY <= SAT_Q(13 downto 12);
+--!										SPR_CACHE(to_integer(SPR_EVAL_CNT(5 downto 0))).HF <= SAT_Q(11);
+--!										SPR_CACHE(to_integer(SPR_EVAL_CNT(5 downto 0))).VF <= SAT_Q(15);
+--!										if SPR_EVAL_X(7 downto 2) = "000000" then
+--!											SPR_CACHE(to_integer(SPR_EVAL_CNT(5 downto 0))).SPR0 <= '1';
+--!										else
+--!											SPR_CACHE(to_integer(SPR_EVAL_CNT(5 downto 0))).SPR0 <= '0';
+--!										end if;
+--!										if RC_CNT = unsigned(SPR_Y) then
+--!											SPR_CACHE(to_integer(SPR_EVAL_CNT(5 downto 0))).TOP <= '1';
+--!										else
+--!											SPR_CACHE(to_integer(SPR_EVAL_CNT(5 downto 0))).TOP <= '0';
+--!										end if;
+--!										if RC_CNT = unsigned(SPR_Y) + unsigned(SPR_H) then
+--!											SPR_CACHE(to_integer(SPR_EVAL_CNT(5 downto 0))).BOTTOM <= '1';
+--!										else
+--!											SPR_CACHE(to_integer(SPR_EVAL_CNT(5 downto 0))).BOTTOM <= '0';
+--!										end if;
 										
 										SPR_EVAL_CNT <= SPR_EVAL_CNT + 1;
 										if SPR_EVAL_CNT = SPR_MAX then
@@ -991,7 +999,7 @@ begin
 			SPR_LINE_WE <= (others=>'0');
 			if SPR_TILE_SAVE = '1' or SPR_TILE_PIX /= 0 then
 				for i in 0 to 1 loop
-					N := SPR_TILE_PIX xor (3 downto 0 => not SPR_TILE_HF);
+					--! N := SPR_TILE_PIX xor (3 downto 0 => not SPR_TILE_HF);
 					COLOR := SPR_TILE_P3(to_integer(N)) & SPR_TILE_P2(to_integer(N)) & SPR_TILE_P1(to_integer(N)) & SPR_TILE_P0(to_integer(N));
 					SPR_LINE_X := SPR_TILE_X + SPR_TILE_PIX;
 					if SPR_LINE_X(9 downto 8) /= "11" and COLOR /= "0000" then
@@ -1040,31 +1048,31 @@ begin
 		end if;
 	end process;
 	
-	SPR_LINE_BUF0 : entity work.dpramv generic map (9,9)
-	port map(
-		clock		=> CLK,
-
-		address_a=> SPR_LINE_ADDR(0),
-		data_a	=> SPR_LINE_D(0),
-		wren_a	=> SPR_LINE_WE(0),
-
-		address_b=> std_logic_vector(SPR_OUT_X(9 downto 1)),
-		wren_b	=> SPR_LINE_CLR and DCK_CE and not SPR_OUT_X(0),
-		q_b		=> SPR_LINE_Q(0)
-	);
-	
-	SPR_LINE_BUF1 : entity work.dpramv generic map (9,9)
-	port map(
-		clock		=> CLK,
-
-		address_a=> SPR_LINE_ADDR(1),
-		data_a	=> SPR_LINE_D(1),
-		wren_a	=> SPR_LINE_WE(1),
-
-		address_b=> std_logic_vector(SPR_OUT_X(9 downto 1)),
-		wren_b	=> SPR_LINE_CLR and DCK_CE and SPR_OUT_X(0),
-		q_b		=> SPR_LINE_Q(1)
-	);
+--!	SPR_LINE_BUF0 : entity work.dpram generic map (9,9)
+--!	port map(
+--!		clock		=> CLK,
+--!
+--!		address_a=> SPR_LINE_ADDR(0),
+--!		data_a	=> SPR_LINE_D(0),
+--!		wren_a	=> SPR_LINE_WE(0),
+--!
+--!		address_b=> std_logic_vector(SPR_OUT_X(9 downto 1)),
+--!		wren_b	=> SPR_LINE_CLR and DCK_CE and not SPR_OUT_X(0),
+--!		q_b		=> SPR_LINE_Q(0)
+--!	);
+--!	
+--!	SPR_LINE_BUF1 : entity work.dpram generic map (9,9)
+--!	port map(
+--!		clock		=> CLK,
+--!
+--!		address_a=> SPR_LINE_ADDR(1),
+--!		data_a	=> SPR_LINE_D(1),
+--!		wren_a	=> SPR_LINE_WE(1),
+--!
+--!		address_b=> std_logic_vector(SPR_OUT_X(9 downto 1)),
+--!		wren_b	=> SPR_LINE_CLR and DCK_CE and SPR_OUT_X(0),
+--!		q_b		=> SPR_LINE_Q(1)
+--!	);
 
 	process(CLK, RST_N)
 	variable PX : unsigned(3 downto 0);
@@ -1105,7 +1113,7 @@ begin
 						GRID_BG(7) <= '1';
 					end if; 
 					
-					if SPR_TILE_FRAME(to_integer(unsigned(BG_OUT_X))) = '1' then
+					if SPR_TILE_FRAME(to_integer(BG_OUT_X)) = '1' then
 						GRID_SP(7) <= '1';
 					end if; 
 					
@@ -1243,11 +1251,11 @@ begin
 						end case;
 						if AR >= "00011" then
 							if BYTEWORD = '0' then
-								REGS(to_integer(unsigned(AR)))(15 downto 0) <= DI(15 downto 0);
+								REGS(to_integer(AR))(15 downto 0) <= DI(15 downto 0);
 							elsif A(0) = '0' then
-								REGS(to_integer(unsigned(AR)))(7 downto 0) <= DI(7 downto 0);
+								REGS(to_integer(AR))(7 downto 0) <= DI(7 downto 0);
 							else
-								REGS(to_integer(unsigned(AR)))(15 downto 8) <= DI(7 downto 0);
+								REGS(to_integer(AR))(15 downto 8) <= DI(7 downto 0);
 							end if;
 						end if;
 						
