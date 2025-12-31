@@ -7,7 +7,6 @@
 module mycore
 (
 	input         clk_sys,
-    input         clk_cpu,
     input         clk_ram,
 	input         reset,
     input         pll_locked,
@@ -111,6 +110,8 @@ wire        ram_readyn;
 
 wire [24:0] memif_sdram_waddr;
 wire [31:0] memif_sdram_din;
+
+wire clk_cpu = clk_sys;
 
 initial cpu_ce = 0;
 

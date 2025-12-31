@@ -290,7 +290,6 @@ wire ce_pix;
 mycore mycore
 (
 	.clk_sys(clk_sys),
-    .clk_cpu(CLK_50M),
     .clk_ram(clk_ram),
 	.reset(reset | rombios_download),
 	.pll_locked(pll_locked),

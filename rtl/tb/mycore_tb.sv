@@ -11,7 +11,7 @@
 module mycore_tb;
 
 logic		reset;
-logic       CLK_50M, clk_sys, clk_ram;
+logic       clk_sys, clk_ram;
 
 initial begin
     $timeformat(-6, 0, " us", 1);
@@ -53,7 +53,6 @@ wire        ioctl_wait;
 mycore mycore
 (
 	.clk_sys(clk_sys),
-    .clk_cpu(CLK_50M),
     .clk_ram(clk_ram),
 	.reset(reset),
     .pll_locked('1),
@@ -94,17 +93,12 @@ mycore mycore
 
 initial begin
     reset = 1;
-    CLK_50M = 1;
     clk_sys = 1;
     clk_ram = 1;
 end
 
-initial forever begin :clkgen_50M
-    #0.01 CLK_50M = ~CLK_50M; // 50 MHz
-end
-
 initial forever begin :clkgen_sys
-    #0.025 clk_sys = ~clk_sys; // 20 MHz
+    #0.01 clk_sys = ~clk_sys; // 50 MHz
 end
 
 initial forever begin :clkgen_ram
