@@ -277,7 +277,7 @@ reg SPR_FETCH_DONE;
 reg SPR_FETCH_W;
 reg [9:0] SPR_OUT_X;
 wire SPR_CE;
-wire [31:0] SPR_MAX;
+wire [6:0] SPR_MAX;
 reg [2:0] FETCH_DOT;
 reg FETCH_CE;
 wire [2:0] FDOT_CNT;
@@ -363,7 +363,7 @@ reg CLR_WE;
 
   assign FDOT_CNT = SP64 == 1'b0 ? DOT_CNT : FETCH_DOT;
   assign SPR_CE = SP64 == 1'b0 ? DCK_CE : FETCH_CE;
-  assign SPR_MAX = SP64 == 1'b0 ? 15 : 63;
+  assign SPR_MAX = SP64 == 1'b0 ? 7'd15 : 7'd63;
   assign HSW_END_POS = {2'b00,HSW} + ({6'b000000,RES7M});
   assign HDS_END_POS = ({2'b00,HSW}) + ({6'b000000,RES7M}) + 1 + (HDS);
   assign HDISP_END_POS = ({2'b00,HSW}) + ({6'b000000,RES7M}) + 1 + (HDS) + 1 + (HDW);
@@ -1055,10 +1055,6 @@ reg CLR_WE;
                   //else begin
                   //  SPR_CACHE[SPR_EVAL_CNT[5:0]].BOTTOM <= 1'b0;
                   //end
-                  //SPR_EVAL_CNT <= SPR_EVAL_CNT + 1;
-                  //if(SPR_EVAL_CNT == SPR_MAX) begin
-                  //  SPR_EVAL_FULL <= 1'b1;
-                  //end
                   Sprite_r spr_cache_rhs;
                   spr_cache_rhs.X = SPR_X;
                   spr_cache_rhs.Y = SPR_Y;
@@ -1074,6 +1070,11 @@ reg CLR_WE;
                   spr_cache_rhs.TOP = RC_CNT == SPR_Y;
                   spr_cache_rhs.BOTTOM = RC_CNT == (SPR_Y + 10'(SPR_H));
                   SPR_CACHE[SPR_EVAL_CNT[5:0]] <= spr_cache_rhs;
+
+                  SPR_EVAL_CNT <= SPR_EVAL_CNT + 1;
+                  if(SPR_EVAL_CNT == SPR_MAX) begin
+                    SPR_EVAL_FULL <= 1'b1;
+                  end
                 end
                 else begin
                   if(`CR_IE_OC == 1'b1) begin

@@ -7,6 +7,7 @@
 `timescale 1us / 1ns
 
 //`define USE_IOCTL_FOR_LOAD 1
+`define SAVE_FRAMES 1
 
 module mycore_tb;
 
@@ -50,6 +51,11 @@ reg [24:0]  ioctl_addr;
 reg [15:0]  ioctl_dout;
 wire        ioctl_wait;
 
+wire        pce;
+wire        hbl, vbl;
+wire        vs;
+wire [7:0]  r, g, b;
+
 mycore mycore
 (
 	.clk_sys(clk_sys),
@@ -79,16 +85,16 @@ mycore mycore
     .SDRAM_nRAS(SDRAM_nRAS),
     .SDRAM_nWE(SDRAM_nWE),
 
-	.ce_pix(),
+	.ce_pix(pce),
 
-	.HBlank(),
+	.HBlank(hbl),
 	.HSync(),
-	.VBlank(),
-	.VSync(),
+	.VBlank(vbl),
+	.VSync(vs),
 
-	.R(),
-	.G(),
-	.B()
+	.R(r),
+	.G(g),
+	.B(b)
 );
 
 initial begin
@@ -202,16 +208,68 @@ endtask
 
 //////////////////////////////////////////////////////////////////////
 
+`ifdef SAVE_FRAMES
+
+integer frame = 0;
+integer fpic;
+logic   pice;
+string  fname;
+
+initial fpic = -1;
+always @(negedge vs) begin
+  if (fpic != -1) begin
+    $fclose(fpic);
+    fpic = -1;
+`ifdef VERILATOR
+    $system({"python3 render2png.py ", fname, {".hex "}, fname, ".png; rm ", fname, ".hex"});
+`endif
+  end
+  $display("%t: Frame %03d", $time, frame);
+  $sformat(fname, "frames/render-%03d", frame);
+  pice = 0;
+  if ((frame % 1) == 0) begin
+    fpic = $fopen({fname, ".hex"}, "w");
+  end
+  frame = frame + 1;
+end
+final
+  $fclose(fpic);
+
+wire de = ~(hbl | vbl);
+
+always @(posedge clk_sys) begin
+  if (fpic != -1 && pce) begin
+    if (de) begin
+      $fwrite(fpic, "%x", {r, g, b});
+      pice = 1;
+    end
+    else if (pice) begin
+      pice = 0;
+      $fwrite(fpic, "\n");
+    end
+  end
+end
+
+`endif
+
+//////////////////////////////////////////////////////////////////////
+
 initial #0 begin
     #10 ; // wait for sdram init.
 
     load_rombios();
     $display("ROMs loaded.");
 
+    //load_file({4'h8, 21'h0}, "ram.bin", '0);
+
     reset = 0;
 end
 
 initial @(negedge reset) #(500e3) begin
+    //$writememh("vram0.hex", mycore.mach.vram0.mem);
+    //$writememh("vram1.hex", mycore.mach.vram1.mem);
+    //$writememh("vce_cp.hex", mycore.mach.vce.cpram.mem);
+
     $finish;
 end
 
