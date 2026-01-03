@@ -1,8 +1,10 @@
 // V810 Test Core
 //
-// Copyright (c) 2025 David Hunter
+// Copyright (c) 2025-2026 David Hunter
 //
 // This program is GPL licensed. See COPYING for the full license.
+
+import core_pkg::hmi_t;
 
 module mycore
 (
@@ -20,6 +22,8 @@ module mycore
     input [24:0]  ioctl_addr,
     input [15:0]  ioctl_dout,
     output reg    ioctl_wait = '0,
+
+    input         hmi_t HMI,
 
 	output        SDRAM_CLK,
 	output        SDRAM_CKE,
@@ -144,6 +148,8 @@ mach mach
    .RAM_WEn(ram_wen),
    .RAM_BEn(ram_ben),
    .RAM_READYn(ram_readyn),
+
+   .HMI(HMI),
 
    .A(a),
 

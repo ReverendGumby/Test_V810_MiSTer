@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.4.0 (w)1999-2022 BSI
-[*] Tue Dec 30 04:09:54 2025
+[*] Sat Jan  3 03:17:03 2026
 [*]
 [dumpfile] "/Users/dhunter/src/mister/Test_V810_MiSTer/rtl/tb/mycore_tb.verilator.fst"
-[dumpfile_mtime] "Tue Dec 30 04:09:54 2025"
-[dumpfile_size] 185969
+[dumpfile_mtime] "Sat Jan  3 03:16:45 2026"
+[dumpfile_size] 14787865
 [savefile] "/Users/dhunter/src/mister/Test_V810_MiSTer/rtl/tb/mycore_tb.verilator.gtkw"
-[timestart] 0
+[timestart] 430996200
 [size] 1334 601
 [pos] -1 -1
-*-27.199163 353975180 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+*-15.199163 431012260 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
 [markername] AA
 [markername] BB
 [markername] CC
@@ -77,6 +77,24 @@ mycore_tb.mycore.mach.ga.MRQn
 @22
 mycore_tb.mycore.mach.ga.isr[6:0]
 mycore_tb.mycore.mach.ga.imr[6:0]
+@800200
+-kpc0
+@28
+mycore_tb.mycore.mach.ga.kpc0.KP_LATCH
+mycore_tb.mycore.mach.ga.kpc0.KP_CLK
+mycore_tb.mycore.mach.ga.kpc0.KP_DIN
+mycore_tb.mycore.mach.ga.kpc0.A1
+mycore_tb.mycore.mach.ga.kpc0.A6
+mycore_tb.mycore.mach.ga.kpc0.CSn
+mycore_tb.mycore.mach.ga.kpc0.RDn
+@22
+mycore_tb.mycore.mach.ga.kpc0.DO[15:0]
+@28
+mycore_tb.mycore.mach.ga.kpc0.ios
+@22
+mycore_tb.mycore.mach.ga.kpc0.data_sr[31:0]
+@1000200
+-kpc0
 @200
 -mmc
 @28
@@ -149,7 +167,6 @@ mycore_tb.mycore.mach.vdc0.VD[8:0]
 mycore_tb.mycore.mach.vdc1.CS_N
 @22
 mycore_tb.mycore.mach.vdc1.VD[8:0]
-@28
 @200
 -vce
 @28
@@ -157,7 +174,6 @@ mycore_tb.mycore.mach.vce.CSn
 @22
 mycore_tb.mycore.mach.vce.ar[4:0]
 mycore_tb.mycore.mach.vce.cpa[8:0]
-@22
 mycore_tb.mycore.mach.vce.cpdin[15:0]
 @28
 mycore_tb.mycore.mach.vce.cpd_wr
@@ -170,7 +186,7 @@ mycore_tb.mycore.mach.vce.mix_cpa_out[8:0]
 mycore_tb.mycore.mach.vce.Y[7:0]
 mycore_tb.mycore.mach.vce.U[7:0]
 mycore_tb.mycore.mach.vce.V[7:0]
-@29
+@28
 mycore_tb.mycore.mach.vce.VSn
 [pattern_trace] 1
 [pattern_trace] 0

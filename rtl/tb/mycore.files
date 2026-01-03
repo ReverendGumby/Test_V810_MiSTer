@@ -3,9 +3,12 @@ as4c32m16sb.sv
 altddio_out.v
 dpram.sv
 
-../mycore.v
+../core_pkg.sv
+
+../mycore.sv
 ../memif_sdram.sv
 ../sdram.v
+
 ../mach.sv
 ../huc6261.sv
 ../huc6270.sv
@@ -13,6 +16,7 @@ dpram.sv
 ../fx_ga.sv
 ../scsi.v
 ../fake_cd.sv
+../hmi2kp.sv
 
 ../fifo/fifo1.v
 

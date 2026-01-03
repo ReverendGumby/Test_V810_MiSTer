@@ -33,7 +33,7 @@ module fx_ga_kpc
     output reg    KP_CLK,
     output        KP_RW,
     input         KP_DIN,
-    output reg    KP_DOUT
+    output        KP_DOUT
     );
 
 logic           trg, trg_set, trg_reset;

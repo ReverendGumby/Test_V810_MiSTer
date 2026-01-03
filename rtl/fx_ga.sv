@@ -242,9 +242,10 @@ assign eisr = isr & ~imr;
 // Identify the highest level in the set of enabled active interrupts.
 always @* begin
     hail = '0;
-    for (int i = 0; i <= 6; i++)
+    for (int i = 0; i <= 6; i++) begin :scan_int
         if (eisr[i] & (ilr[i] > hail))
             hail = ilr[i];
+    end
 end
 
 assign CINT = |eisr;

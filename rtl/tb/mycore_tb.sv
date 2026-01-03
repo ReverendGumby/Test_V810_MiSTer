@@ -1,6 +1,6 @@
 // Core testbench
 //
-// Copyright (c) 2025 David Hunter
+// Copyright (c) 2025-2026 David Hunter
 //
 // This program is GPL licensed. See COPYING for the full license.
 
@@ -8,6 +8,8 @@
 
 //`define USE_IOCTL_FOR_LOAD 1
 `define SAVE_FRAMES 1
+
+import core_pkg::hmi_t;
 
 module mycore_tb;
 
@@ -22,7 +24,7 @@ initial begin
     $dumpvars();
 `else
     $dumpfile("mycore_tb.verilator.fst");
-    $dumpvars();
+    #(418e3) $dumpvars();
 `endif
 end
 
@@ -51,6 +53,8 @@ reg [24:0]  ioctl_addr;
 reg [15:0]  ioctl_dout;
 wire        ioctl_wait;
 
+hmi_t       hmi;
+
 wire        pce;
 wire        hbl, vbl;
 wire        vs;
@@ -72,6 +76,8 @@ mycore mycore
 	.ioctl_addr(ioctl_addr),
 	.ioctl_dout(ioctl_dout),
 	.ioctl_wait(ioctl_wait),
+
+    .HMI(hmi),
 
     .SDRAM_CLK(SDRAM_CLK),
     .SDRAM_CKE(SDRAM_CKE),
@@ -101,6 +107,8 @@ initial begin
     reset = 1;
     clk_sys = 1;
     clk_ram = 1;
+
+    hmi = '0;
 end
 
 initial forever begin :clkgen_sys
@@ -265,12 +273,18 @@ initial #0 begin
     reset = 0;
 end
 
-initial @(negedge reset) #(500e3) begin
+initial #(500e3) begin
     //$writememh("vram0.hex", mycore.mach.vram0.mem);
     //$writememh("vram1.hex", mycore.mach.vram1.mem);
     //$writememh("vce_cp.hex", mycore.mach.vce.cpram.mem);
 
     $finish;
+end
+
+initial if (0) begin
+  #(430e3);
+  $display("Pressing JP1.Left...");
+  hmi.jp1.l = '1;
 end
 
 endmodule

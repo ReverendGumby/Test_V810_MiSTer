@@ -1,10 +1,12 @@
 // Computer assembly
 //
-// Copyright (c) 2025 David Hunter
+// Copyright (c) 2025-2026 David Hunter
 //
 // This program is GPL licensed. See COPYING for the full license.
 
 /* verilator lint_off PINMISSING */
+
+import core_pkg::*;
 
 module mach
   (
@@ -26,6 +28,8 @@ module mach
    output        RAM_WEn,
    output [3:0]  RAM_BEn,
    input         RAM_READYn,
+
+   input         hmi_t HMI,
 
    output [31:0] A,
 
@@ -122,6 +126,12 @@ logic [7:0]     scsi_cd_cd_data;
 logic           scsi_cd_cd_wr;
 logic           scsi_cd_cd_data_end;
 
+wire [1:0]      kp_latch;
+wire [1:0]      kp_clk;
+wire [1:0]      kp_rw;
+wire [1:0]      kp_din;
+wire [1:0]      kp_dout;
+
 v810 cpu
     (
      .RESn(RESn),
@@ -194,7 +204,13 @@ fx_ga ga
 
      .CINT(cpu_int),
      .CINTVn(cpu_intvn),
-     .CNMIn(cpu_nmin)
+     .CNMIn(cpu_nmin),
+
+     .KP_LATCH(kp_latch),
+     .KP_CLK(kp_clk),
+     .KP_RW(kp_rw),
+     .KP_DIN(kp_din),
+     .KP_DOUT(kp_dout)
      );
 
 huc6261 vce
@@ -469,6 +485,23 @@ fake_cd fake_cd
      .STATUS(scsi_cd_status),
      .CD_DATA(scsi_cd_cd_data),
      .CD_WR(scsi_cd_cd_wr)
+     );
+
+//////////////////////////////////////////////////////////////////////
+// K-port interface
+
+hmi2kp hmi2kp
+    (
+     .CLK(CLK),
+     .RESn(RESn),
+
+     .HMI(HMI),
+
+     .KP_LATCH(kp_latch),
+     .KP_CLK(kp_clk),
+     .KP_RW(kp_rw),
+     .KP_DIN(kp_din),
+     .KP_DOUT(kp_dout)
      );
 
 //////////////////////////////////////////////////////////////////////

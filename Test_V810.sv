@@ -219,7 +219,10 @@ localparam CONF_STR = {
 	"-;",
 	"T[0],Reset;",
 	"R[0],Reset and close OSD;",
-	"v,0;", // [optional] config version 0-99. 
+	"J1,Button I,Button II,Select,Run,Button III,Button IV,Button V,Button VI;",
+	"jn,A,B,Select,Start,X,Y,L,R;",
+	"jp,A,B,Select,Start,L,R,Y,X;",
+	"v,1;", // [optional] config version 0-99. 
 	        // If CONF_STR options are changed in incompatible way, then change version number too,
 			  // so all options will get default values on first start.
 	"V,v",`BUILD_DATE 
@@ -228,6 +231,7 @@ localparam CONF_STR = {
 wire forced_scandoubler;
 wire   [1:0] buttons;
 wire [127:0] status;
+wire [31:0]  joystick_0, joystick_1;
 wire  [10:0] ps2_key;
 wire        ioctl_download;
 wire  [7:0] ioctl_index;
@@ -249,14 +253,16 @@ hps_io #(.CONF_STR(CONF_STR), .WIDE(1)) hps_io
 	.status(status),
 	.status_menumask({status[5]}),
 	
+	.joystick_0(joystick_0),
+	.joystick_1(joystick_1),
+	.ps2_key(ps2_key),
+
 	.ioctl_download(ioctl_download),
 	.ioctl_index(ioctl_index),
 	.ioctl_wr(ioctl_wr),
 	.ioctl_addr(ioctl_addr),
 	.ioctl_dout(ioctl_dout),
 	.ioctl_wait(ioctl_wait),
-
-	.ps2_key(ps2_key),
 
 	.EXT_BUS()
 );
@@ -278,6 +284,24 @@ pll pll
 );
 
 wire reset = RESET | status[0] | buttons[1];
+
+//////////////////////////////////////////////////////////////////////
+// Connect input sources to HMI
+
+hmi_t       hmi;
+
+task joy2hmi(input [31:0] joy, output joypad_t jp);
+    {jp.u, jp.d, jp.l, jp.r} = joy[3:0];
+    {jp.b[6:3], jp.run, jp.select, jp.b[2:1]} = joy[11:4];
+    {jp.mode2, jp.mode1} = '0;
+endtask
+
+initial
+    hmi = '0;
+always @joystick_0
+    joy2hmi(joystick_0, hmi.jp1);
+always @joystick_1
+    joy2hmi(joystick_1, hmi.jp2);
 
 //////////////////////////////////////////////////////////////////////
 
@@ -303,6 +327,8 @@ mycore mycore
 	.ioctl_addr(ioctl_addr),
 	.ioctl_dout(ioctl_dout),
 	.ioctl_wait(ioctl_wait),
+
+    .HMI(hmi),
 
     .SDRAM_CLK(SDRAM_CLK),
     .SDRAM_CKE(SDRAM_CKE),
