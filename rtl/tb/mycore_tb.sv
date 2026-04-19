@@ -13,8 +13,9 @@ import core_pkg::hmi_t;
 
 module mycore_tb;
 
-logic		reset;
-logic       clk_sys, clk_ram;
+logic		reset = 1;
+logic       clk_sys = 1;
+logic       clk_ram = 1;
 
 initial begin
     $timeformat(-6, 0, " us", 1);
@@ -42,7 +43,10 @@ wire        SDRAM_nCAS;
 wire        SDRAM_nRAS;
 wire        SDRAM_nWE;
 
-sdram_xsds sdrb (.*);
+localparam CLK_RAM_MHZ = 100.0;
+assign SDRAM_CLK = clk_ram;
+
+sdram_xsds #(.CLK_MHZ(CLK_RAM_MHZ)) sdrb (.*);
 
 //////////////////////////////////////////////////////////////////////
 
@@ -53,18 +57,19 @@ reg [24:0]  ioctl_addr;
 reg [15:0]  ioctl_dout;
 wire        ioctl_wait;
 
-hmi_t       hmi;
+hmi_t       hmi = '0;
 
 wire        pce;
 wire        hbl, vbl;
 wire        vs;
 wire [7:0]  r, g, b;
+logic       reset_sys;
 
 mycore mycore
 (
 	.clk_sys(clk_sys),
     .clk_ram(clk_ram),
-	.reset(reset),
+	.reset(reset_sys),
     .pll_locked('1),
 
 	.pal('0),
@@ -79,7 +84,6 @@ mycore mycore
 
     .HMI(hmi),
 
-    .SDRAM_CLK(SDRAM_CLK),
     .SDRAM_CKE(SDRAM_CKE),
     .SDRAM_A(SDRAM_A),
     .SDRAM_BA(SDRAM_BA),
@@ -103,14 +107,6 @@ mycore mycore
 	.B(b)
 );
 
-initial begin
-    reset = 1;
-    clk_sys = 1;
-    clk_ram = 1;
-
-    hmi = '0;
-end
-
 initial forever begin :clkgen_sys
     #0.01 clk_sys = ~clk_sys; // 50 MHz
 end
@@ -119,15 +115,17 @@ initial forever begin :clkgen_ram
     #0.005 clk_ram = ~clk_ram; // 100 MHz
 end
 
+initial reset_sys = 1;
+always @(posedge clk_sys)
+    reset_sys <= reset;
+
 //////////////////////////////////////////////////////////////////////
 
 string fn_rombios = "rombios.bin";
-bit    swap_rombios = 1;
 
 `ifdef USE_IOCTL_FOR_LOAD
 
 bit         ioctl_active = 0;
-bit         ioctl_swap;
 integer     ioctl_fin;
 bit         ioctl_wrote = 0;
 
@@ -151,8 +149,7 @@ logic [15:0] data;
     else begin
         code = $fread(data, ioctl_fin, 0, 2);
         if (!$feof(ioctl_fin)) begin
-            if (ioctl_swap)
-                data = {data[7:0], data[15:8]};
+            data = {data[7:0], data[15:8]}; // $fread is big-endian
             ioctl_dout <= data;
             ioctl_wr <= '1;
         end
@@ -166,11 +163,10 @@ logic [15:0] data;
     end
 end
 
-task ioctl_go(input string fn, bit swap_endian);
+task ioctl_go(input string fn);
     ioctl_fin = $fopen(fn, "r");
     assert(ioctl_fin != 0) else $finish;
     ioctl_active = '1;
-    ioctl_swap = swap_endian;
     while (ioctl_active)
         @(posedge clk_sys) ;
     $fclose(ioctl_fin);
@@ -178,16 +174,16 @@ endtask
 
 task load_rombios;
     ioctl_index = {2'd0, 6'd0};
-    ioctl_go(fn_rombios, swap_rombios);
+    ioctl_go(fn_rombios);
 endtask
 
 `else // ifndef USE_IOCTL_FOR_LOAD
 
-task load_file(input [24:0] base, input string fn, bit swap_endian);
+task load_file(input [26:0] base, input string fn);
 integer	fin;
 integer code;
 logic [15:0] data;
-logic [24:0] addr;
+logic [26:0] addr;
     begin
         fin = $fopen(fn, "r");
         assert(fin != 0) else $finish;
@@ -195,8 +191,7 @@ logic [24:0] addr;
         while (!$feof(fin)) begin :load_loop
             code = $fread(data, fin, 0, 2);
             if (!$feof(fin)) begin
-                if (swap_endian)
-                    data = {data[7:0], data[15:8]};
+                data = {data[7:0], data[15:8]}; // $fread is big-endian
                 sdrb.u1a.write(mycore.sdram.addr_to_bank(addr),
                                mycore.sdram.addr_to_row(addr),
                                mycore.sdram.addr_to_col(addr),
@@ -209,7 +204,7 @@ logic [24:0] addr;
 endtask
 
 task load_rombios;
-    load_file(25'h0, fn_rombios, swap_rombios);
+    load_file(mycore.memif_sdram.ROM_BASE_A, fn_rombios);
 endtask
 
 `endif

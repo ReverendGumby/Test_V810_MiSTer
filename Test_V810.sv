@@ -271,6 +271,8 @@ wire rombios_download   = ioctl_download & (ioctl_index[5:0] <= 6'h01);
 
 ///////////////////////   CLOCKS   ///////////////////////////////
 
+localparam CLK_RAM_MHZ = 100.0;
+
 wire clk_sys, clk_ram;
 wire pll_locked;
 
@@ -280,6 +282,7 @@ pll pll
 	.rst(0),
 	.outclk_0(clk_sys),
     .outclk_1(clk_ram),
+    .outclk_2(SDRAM_CLK),
     .locked(pll_locked)
 );
 
@@ -311,7 +314,7 @@ wire VBlank;
 wire VSync;
 wire ce_pix;
 
-mycore mycore
+mycore #(.CLK_RAM_MHZ(CLK_RAM_MHZ)) mycore
 (
 	.clk_sys(clk_sys),
     .clk_ram(clk_ram),
@@ -330,7 +333,6 @@ mycore mycore
 
     .HMI(hmi),
 
-    .SDRAM_CLK(SDRAM_CLK),
     .SDRAM_CKE(SDRAM_CKE),
     .SDRAM_A(SDRAM_A),
     .SDRAM_BA(SDRAM_BA),

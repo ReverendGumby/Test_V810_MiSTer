@@ -9,6 +9,7 @@
 import core_pkg::hmi_t;
 
 module mycore
+    #(parameter CLK_RAM_MHZ = 100.0)
 (
 	input         clk_sys,
     input         clk_ram,
@@ -27,7 +28,6 @@ module mycore
 
     input         hmi_t HMI,
 
-	output        SDRAM_CLK,
 	output        SDRAM_CKE,
 	output [12:0] SDRAM_A,
 	output [1:0]  SDRAM_BA,
@@ -51,38 +51,51 @@ module mycore
 	output [7:0]  B
 );
 
+reg [26:0]      romwr_a;
+reg [31:0]      romwr_d;
+reg             romwr_req = 0;
+wire            romwr_ack;
+
 //////////////////////////////////////////////////////////////////////
 // SDRAM controller
 
-wire        sdram_clkref;
-wire [24:0] sdram_raddr, sdram_waddr;
-wire [31:0] sdram_din, sdram_dout;
-wire        sdram_rd, sdram_rd_rdy;
-wire [3:0]  sdram_be;
-wire        sdram_we;
-wire        sdram_we_rdy;
-wire        sdram_we_req, sdram_we_ack;
+wire [26:0] sdram_ch1_addr;
+wire [31:0] sdram_ch1_din, sdram_ch1_dout;
+wire [3:0]  sdram_ch1_be;
+wire        sdram_ch1_rnw, sdram_ch1_req, sdram_ch1_ready;
+wire [26:0] sdram_ch2_addr;
+wire [31:0] sdram_ch2_din, sdram_ch2_dout;
+wire        sdram_ch2_rnw, sdram_ch2_req, sdram_ch2_ready;
+wire [26:0] sdram_ch3_addr;
+wire [31:0] sdram_ch3_din, sdram_ch3_dout;
+wire        sdram_ch3_rnw, sdram_ch3_req, sdram_ch3_ready;
 
-sdram sdram
+sdram #(.CLK_MHZ(CLK_RAM_MHZ)) sdram
 (
 	.*,
 
-	.init(~pll_locked),
-	.clk(clk_ram),
-	.clkref(sdram_clkref),
+    .init(~pll_locked),
+    .clk(clk_ram),
 
-	.waddr(sdram_waddr),
-	.din(sdram_din),
-    .be(sdram_be),
-	.we(sdram_we),
-    .we_rdy(sdram_we_rdy),
-	.we_req(sdram_we_req),
-	.we_ack(sdram_we_ack),
-
-	.raddr(sdram_raddr),
-	.rd(sdram_rd),
-	.rd_rdy(sdram_rd_rdy),
-	.dout(sdram_dout)
+    .ch1_addr(sdram_ch1_addr),
+    .ch1_dout(sdram_ch1_dout),
+    .ch1_din(sdram_ch1_din),
+    .ch1_req(sdram_ch1_req),
+    .ch1_rnw(sdram_ch1_rnw),
+    .ch1_be(sdram_ch1_be),
+    .ch1_ready(sdram_ch1_ready),
+    .ch2_addr(sdram_ch2_addr),
+    .ch2_dout(sdram_ch2_dout),
+    .ch2_din(sdram_ch2_din),
+    .ch2_req(sdram_ch2_req),
+    .ch2_rnw(sdram_ch2_rnw),
+    .ch2_ready(sdram_ch2_ready),
+    .ch3_addr(sdram_ch3_addr),
+    .ch3_dout(sdram_ch3_dout),
+    .ch3_din(sdram_ch3_din),
+    .ch3_req(sdram_ch3_req),
+    .ch3_rnw(sdram_ch3_rnw),
+    .ch3_ready(sdram_ch3_ready)
 );
 
 //////////////////////////////////////////////////////////////////////
@@ -114,8 +127,10 @@ wire        ram_wen;
 wire [3:0]  ram_ben;
 wire        ram_readyn;
 
-wire [24:0] memif_sdram_waddr;
-wire [31:0] memif_sdram_din;
+wire [26:0] ls_addr;
+wire [31:0] ls_din, ls_dout;
+wire        ls_we_req, ls_we_ack;
+wire        ls_rd_req, ls_rd_ack;
 
 wire clk_cpu = clk_sys;
 
@@ -185,60 +200,110 @@ memif_sdram memif_sdram
    .RAM_BEn(ram_ben),
    .RAM_READYn(ram_readyn),
 
+   .SRAM_A('0),
+   .SRAM_DI('0),
+   .SRAM_DO(),
+   .SRAM_CEn('1),
+   .SRAM_WEn('1),
+   .SRAM_READYn(),
+
+   .BMP_A('0),
+   .BMP_DI('0),
+   .BMP_DO(),
+   .BMP_CEn('1),
+   .BMP_WEn('1),
+   .BMP_READYn(),
+
+   .KRAMA_A('0),
+   .KRAMA_DI(),
+   .KRAMA_DO('0),
+   .KRAMA_BE('0),
+   .KRAMA_WR('0),
+   .KRAMA_REQ('0),
+   .KRAMA_ACK(),
+
+   .KRAMB_A('0),
+   .KRAMB_DI(),
+   .KRAMB_DO('0),
+   .KRAMB_BE('0),
+   .KRAMB_WR('0),
+   .KRAMB_REQ('0),
+   .KRAMB_ACK(),
+
+   .LS_ADDR(ls_addr),
+   .LS_DIN(ls_din),
+   .LS_WE_REQ(ls_we_req),
+   .LS_WE_ACK(ls_we_ack),
+   .LS_DOUT(ls_dout),
+   .LS_RD_REQ(ls_rd_req),
+   .LS_RD_ACK(ls_rd_ack),
+
    .SDRAM_CLK(clk_ram),
-   .SDRAM_CLKREF(sdram_clkref),
-   .SDRAM_WADDR(memif_sdram_waddr),
-   .SDRAM_DIN(memif_sdram_din),
-   .SDRAM_BE(sdram_be),
-   .SDRAM_WE(sdram_we),
-   .SDRAM_WE_RDY(sdram_we_rdy),
-   .SDRAM_RADDR(sdram_raddr),
-   .SDRAM_RD(sdram_rd),
-   .SDRAM_RD_RDY(sdram_rd_rdy),
-   .SDRAM_DOUT(sdram_dout)
+   .SDRAM_CH1_ADDR(sdram_ch1_addr),
+   .SDRAM_CH1_DOUT(sdram_ch1_dout),
+   .SDRAM_CH1_DIN(sdram_ch1_din),
+   .SDRAM_CH1_REQ(sdram_ch1_req),
+   .SDRAM_CH1_RNW(sdram_ch1_rnw),
+   .SDRAM_CH1_BE(sdram_ch1_be),
+   .SDRAM_CH1_READY(sdram_ch1_ready),
+   .SDRAM_CH2_ADDR(sdram_ch2_addr),
+   .SDRAM_CH2_DOUT(sdram_ch2_dout),
+   .SDRAM_CH2_DIN(sdram_ch2_din),
+   .SDRAM_CH2_REQ(sdram_ch2_req),
+   .SDRAM_CH2_RNW(sdram_ch2_rnw),
+   .SDRAM_CH2_READY(sdram_ch2_ready),
+   .SDRAM_CH3_ADDR(sdram_ch3_addr),
+   .SDRAM_CH3_DOUT(sdram_ch3_dout),
+   .SDRAM_CH3_DIN(sdram_ch3_din),
+   .SDRAM_CH3_REQ(sdram_ch3_req),
+   .SDRAM_CH3_RNW(sdram_ch3_rnw),
+   .SDRAM_CH3_READY(sdram_ch3_ready)
    );
+
+assign ls_addr = romwr_a;
+assign ls_din = romwr_d;
+assign ls_we_req = romwr_req;
+assign ls_rd_req = '0;
+assign romwr_ack = ls_we_ack;
 
 //////////////////////////////////////////////////////////////////////
 // ROM loader
 
-wire rombios_download   = ioctl_download & (ioctl_index[5:0] <= 6'h01);
+`include "memif_sdram_part.svh"
 
-reg [23:0]  romwr_a;
+reg         romwr_active = 0;
 reg         romwr_a1;
-reg [31:0]  romwr_d;
-reg         rom_wr = 0;
-wire        romwr_ack;
 
 always @(posedge clk_sys) begin
-	reg old_download, old_reset;
+	reg old_download;
 
-	old_download <= rombios_download;
-	old_reset <= reset;
+	old_download <= ioctl_download;
 
-	if(~old_reset && reset) ioctl_wait <= 0;
-	if(~old_download && rombios_download) begin
-		romwr_a <= 0;
+    if (~ioctl_download) begin
+        romwr_active <= 0;
+    end
+	if(~old_download && ioctl_download) begin
+        romwr_active <= 1;
         romwr_a1 <= 0;
+        case (ioctl_index[5:0])
+            6'd0, 6'd1: romwr_a <= ROM_BASE_A;
+            default: romwr_active <= 0;
+        endcase
 	end
 	else begin
-		if(ioctl_wr & rombios_download) begin
+		if(ioctl_wr & romwr_active) begin
             if (romwr_a1) begin
 			    ioctl_wait <= 1;
-			    rom_wr <= ~rom_wr;
+			    romwr_req <= ~romwr_req;
             end
             romwr_d <= {ioctl_dout, romwr_d[31:16]};
             romwr_a1 <= ~romwr_a1;
-		end else if(ioctl_wait && (rom_wr == romwr_ack)) begin
+		end else if(ioctl_wait && (romwr_req == romwr_ack)) begin
 			ioctl_wait <= 0;
-			romwr_a <= romwr_a + 24'd4;
+			romwr_a <= romwr_a + 27'd4;
 		end
 	end
 end
-
-assign sdram_waddr = rombios_download ? {1'b0, romwr_a} : memif_sdram_waddr;
-assign sdram_din = rombios_download ? romwr_d : memif_sdram_din;
-assign sdram_we_req = rombios_download & rom_wr;
-assign romwr_ack = sdram_we_ack;
 
 //////////////////////////////////////////////////////////////////////
 // Video output

@@ -7,7 +7,7 @@ dpram.sv
 
 ../mycore.sv
 ../memif_sdram.sv
-../sdram.v
+../sdram.sv
 
 ../mach.sv
 ../huc6261.sv
