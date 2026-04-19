@@ -441,7 +441,7 @@ initial begin
     A = '0;
     DO = '0;
     BE = '1;
-    WR = '1;
+    WR = '0;
     REQ = '0;
 end
 
@@ -478,12 +478,15 @@ always @(posedge CLK) begin
         end
         else begin
             WR <= '1;
-            DO <= ~DI;
+            DO <= DO - 1'd1;
             A <= A + 1'd1;
         end
     end
-    else if (REQ & ACK)
+    else if (REQ & ACK) begin
         REQ <= '0;
+        if (~WR)
+            assert(DI == DO);
+    end
 end
 
 endmodule
