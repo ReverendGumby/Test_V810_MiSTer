@@ -127,6 +127,15 @@ wire        ram_wen;
 wire [3:0]  ram_ben;
 wire        ram_readyn;
 
+wire [17:0] krama_a;
+wire [15:0] krama_di, krama_do;
+wire [1:0]  krama_be;
+wire        krama_wr, krama_req, krama_ack;
+wire [17:0] kramb_a;
+wire [15:0] kramb_di, kramb_do;
+wire [1:0]  kramb_be;
+wire        kramb_wr, kramb_req, kramb_ack;
+
 wire [26:0] ls_addr;
 wire [31:0] ls_din, ls_dout;
 wire        ls_we_req, ls_we_ack;
@@ -214,21 +223,21 @@ memif_sdram memif_sdram
    .BMP_WEn('1),
    .BMP_READYn(),
 
-   .KRAMA_A('0),
-   .KRAMA_DI(),
-   .KRAMA_DO('0),
-   .KRAMA_BE('0),
-   .KRAMA_WR('0),
-   .KRAMA_REQ('0),
-   .KRAMA_ACK(),
+   .KRAMA_A(krama_a),
+   .KRAMA_DI(krama_di),
+   .KRAMA_DO(krama_do),
+   .KRAMA_BE(krama_be),
+   .KRAMA_WR(krama_wr),
+   .KRAMA_REQ(krama_req),
+   .KRAMA_ACK(krama_ack),
 
-   .KRAMB_A('0),
-   .KRAMB_DI(),
-   .KRAMB_DO('0),
-   .KRAMB_BE('0),
-   .KRAMB_WR('0),
-   .KRAMB_REQ('0),
-   .KRAMB_ACK(),
+   .KRAMB_A(kramb_a),
+   .KRAMB_DI(kramb_di),
+   .KRAMB_DO(kramb_do),
+   .KRAMB_BE(kramb_be),
+   .KRAMB_WR(kramb_wr),
+   .KRAMB_REQ(kramb_req),
+   .KRAMB_ACK(kramb_ack),
 
    .LS_ADDR(ls_addr),
    .LS_DIN(ls_din),
@@ -265,6 +274,30 @@ assign ls_din = romwr_d;
 assign ls_we_req = romwr_req;
 assign ls_rd_req = '0;
 assign romwr_ack = ls_we_ack;
+
+kram_source kas
+   (
+    .CLK(clk_cpu),
+    .A(krama_a),
+    .DI(krama_di),
+    .DO(krama_do),
+    .BE(krama_be),
+    .WR(krama_wr),
+    .REQ(krama_req),
+    .ACK(krama_ack)
+    );
+
+kram_source kbs
+   (
+    .CLK(clk_cpu),
+    .A(kramb_a),
+    .DI(kramb_di),
+    .DO(kramb_do),
+    .BE(kramb_be),
+    .WR(kramb_wr),
+    .REQ(kramb_req),
+    .ACK(kramb_ack)
+    );
 
 //////////////////////////////////////////////////////////////////////
 // ROM loader
@@ -387,5 +420,70 @@ assign HSync = ~vid_hsn;
 assign VSync = ~vid_vsn;
 
 `endif
+
+endmodule
+
+//////////////////////////////////////////////////////////////////////
+
+module kram_source
+   (
+    input             CLK,
+    output reg [18:1] A,
+    input [15:0]      DI,
+    output reg [15:0] DO,
+    output reg [1:0]  BE,
+    output reg        WR,
+    output reg        REQ,
+    input             ACK
+    );
+
+initial begin
+    A = '0;
+    DO = '0;
+    BE = '1;
+    WR = '1;
+    REQ = '0;
+end
+
+logic [3:0] ccnt = '0;
+wire trg = ccnt == 4'd9;
+
+always @(posedge CLK) begin
+    if (trg)
+        ccnt <= '0;
+    else
+        ccnt <= ccnt + 1'd1;
+end
+
+logic [8:0] hcnt = 0, vcnt = 0;
+always @(posedge CLK) if (trg) begin
+    if (hcnt == 272) begin
+        hcnt <= 0;
+        if (vcnt == 262)
+            vcnt <= 0;
+        else
+            vcnt <= vcnt + 1'd1;
+    end
+    else
+        hcnt <= hcnt + 1'd1;
+end
+
+wire de = (hcnt >= 9'd16) & (vcnt >= 9'd30);
+
+always @(posedge CLK) begin
+    if (~REQ & trg & de) begin
+        REQ <= '1;
+        if (WR) begin
+            WR <= '0;
+        end
+        else begin
+            WR <= '1;
+            DO <= ~DI;
+            A <= A + 1'd1;
+        end
+    end
+    else if (REQ & ACK)
+        REQ <= '0;
+end
 
 endmodule
