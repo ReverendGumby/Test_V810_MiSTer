@@ -1,5 +1,6 @@
 // SDRAM controller bank submodule
 //
+// Copyright (c) 2015-2019 Sorgelig
 // Copyright (c) 2026 David Hunter
 //
 // This program is GPL licensed. See COPYING for the full license.
@@ -10,28 +11,42 @@ module sdram_bank
     input         clk,
     input         init,
     input         REQ,
+    output        READY,
     input         RNW,
     input [26:0]  ADDR,
     input [31:0]  DIN,
+    output [31:0] DOUT,
     input [3:0]   BE,
     output [3:0]  CREQ,
     output [3:0]  DREQ,
-    output [3:0]  ST,
+    output        IDLE,
     input         PAUSE,
     input         BBSSEL,
+    inout [15:0]  R_DQ,
     output [12:0] R_A,
-    output [2:0]  R_CMD,
-    output [15:0] R_DQOUT,
-    output        R_DQOE
+    output [2:0]  R_CMD
 );
 
 `include "sdram_defs.svh"
+
+// BAnk STate
+localparam BAST_IDLE     = 0;
+localparam BAST_ACT      = 1;
+localparam BAST_ACT_WAIT = 2;
+localparam BAST_R_CMD    = 3;
+localparam BAST_R_DQM    = 4;
+localparam BAST_R        = 5;
+localparam BAST_W_CMD    = 6;
+localparam BAST_W_CMD_2  = 7;
+localparam BAST_W_REC    = 8;
+localparam BAST_PRE      = 9;
 
 reg         rq, rqc; // access request
 reg         rnw; // read / not write
 reg [12:0]  row; // row address
 reg [9:0]   col; // column address
 reg [31:0]  din; // data to write
+reg [31:0]  dout; // data read
 reg [3:0]   be; // byte enables
 reg [3:0]   st, stn; // bank current status
 reg [3:0]   wcnt, wcntn; // wait counter
@@ -39,8 +54,11 @@ reg [3:0]   creq; // cmd bus cycle request bitmap
 reg [3:0]   dreq; // data bus cycle request bitmap
 reg [12:0]  r_a;
 reg [2:0]   r_cmd;
-reg [15:0]  r_dqout;
-reg         r_dqoe;
+reg [15:0]  dqout;
+reg         dqoe;
+
+reg [CAS_LATENCY+BURST_LENGTH:0] data_ready_delay = 0;
+reg         ready = 0;
 
 always @(posedge clk) begin
     rnw <= RNW;
@@ -50,8 +68,7 @@ always @(posedge clk) begin
     be <= BE;
 end
 
-initial
-    rq = 0;
+initial rq = 0;
 always @(posedge clk) begin
     if (init)
         rq <= 0;
@@ -141,33 +158,29 @@ always @* begin
         stn = BAST_IDLE;
 end
 
-initial begin
-    st = BAST_IDLE;
-    wcnt = 0;
-end
-
+initial st = BAST_IDLE;
+initial wcnt = 0;
 always @(posedge clk) begin
     st <= stn;
     wcnt <= wcntn;
 end
 
+// Register SDRAM outputs for the next state
 always @(posedge clk) begin
-    r_a <= '0;
+    r_a        <= '0;
     r_a[12:11] <= 2'b11; // DQM
-    r_cmd <= CMD_NOP;
-    r_dqout <= '0;
-    r_dqoe <= '0;
+    r_cmd      <= CMD_NOP;
 
     case (stn)
         BAST_ACT: begin
-            r_a    <= row;
-            r_cmd    <= CMD_ACTIVE;
+            r_a        <= row;
+            r_cmd      <= CMD_ACTIVE;
         end
         BAST_R_CMD: begin
             r_a[12:11] <= 0; // DQM for 1st beat
             r_a[10]    <= 1; // auto-precharge
             r_a[9:0]   <= col;
-            r_cmd <= CMD_READ;
+            r_cmd      <= CMD_READ;
         end
         BAST_R_DQM: begin
             r_a[12:11] <= 0; // DQM for 2nd beat
@@ -176,29 +189,54 @@ always @(posedge clk) begin
             r_a[12:11] <= ~be[1:0]; // DQM for 1st beat
             r_a[10]    <= 0; // no auto-precharge
             r_a[9:0]   <= col;
-            r_cmd <= CMD_WRITE;
-            r_dqout   <= din[15:0];
-            r_dqoe    <= 1;
+            r_cmd      <= CMD_WRITE;
         end
         BAST_W_CMD_2: begin
             r_a[12:11] <= ~be[3:2]; // DQM for 2nd beat
             r_a[10]    <= 1; // auto-precharge
             r_a[9:0]   <= col;
             r_a[0]     <= 1;
-            r_cmd        <= CMD_WRITE;
-            r_dqout          <= din[31:16];
-            r_dqoe           <= 1;
+            r_cmd      <= CMD_WRITE;
         end
         default: ;
     endcase
 end
 
+always @(posedge clk) begin
+    dqout <= '0;
+    dqoe  <= '0;
+    ready <= '0;
+
+    data_ready_delay <= data_ready_delay >> 1;
+
+    if (data_ready_delay[1]) dout[15:00] <= R_DQ;
+    if (data_ready_delay[0]) dout[31:16] <= R_DQ;
+    if (data_ready_delay[0]) ready <= 1;
+
+    if (BBSSEL)
+        case (st)
+            BAST_R_CMD:
+                data_ready_delay[CAS_LATENCY+BURST_LENGTH-1] <= 1;
+            BAST_W_CMD: begin
+                dqout <= din[15:0];
+                dqoe  <= 1;
+            end
+            BAST_W_CMD_2: begin
+                dqout <= din[31:16];
+                dqoe  <= 1;
+                ready <= 1;
+            end
+            default: ;
+        endcase
+end
+
 assign CREQ = creq;
 assign DREQ = dreq;
-assign ST = st;
+assign IDLE = st == BAST_IDLE;
+assign R_DQ = dqoe ? dqout : 'Z;
 assign R_A = r_a;
 assign R_CMD = r_cmd;
-assign R_DQOUT = r_dqout;
-assign R_DQOE = r_dqoe;
+assign DOUT = dout;
+assign READY = ready;
 
 endmodule

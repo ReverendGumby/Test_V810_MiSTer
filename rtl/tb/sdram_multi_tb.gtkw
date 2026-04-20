@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v4.0.0-prealpha (8ba24ab+) (w)1999-2022 BSI
-[*] Sun Apr 19 23:43:35 2026
+[*] Mon Apr 20 01:32:54 2026
 [*]
 [dumpfile] "/Users/dhunter/src/mister/Test_V810_MiSTer/rtl/tb/sdram_multi_tb.vcd"
-[dumpfile_mtime] "Sun Apr 19 23:37:40 2026"
-[dumpfile_size] 1606363
+[dumpfile_mtime] "Mon Apr 20 01:30:09 2026"
+[dumpfile_size] 16088769
 [savefile] "/Users/dhunter/src/mister/Test_V810_MiSTer/rtl/tb/sdram_multi_tb.gtkw"
-[timestart] 0
+[timestart] 150874
 [size] 1333 600
 [pos] -1 -1
-*-10.387208 268230 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+*-6.387208 150310 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
 [markername] AA
 [markername] BB
 [markername] CC
@@ -70,9 +70,8 @@ sdram_multi_tb.sdram.ch3_req
 sdram_multi_tb.sdram.ch3_ready
 @200
 -ba0
-@23
-sdram_multi_tb.sdram.ba0.creq[3:0]
 @22
+sdram_multi_tb.sdram.ba0.creq[3:0]
 sdram_multi_tb.sdram.ba0.dreq[3:0]
 @24
 sdram_multi_tb.sdram.ba0.st[3:0]
@@ -89,8 +88,9 @@ sdram_multi_tb.sdram.ba1.st[3:0]
 sdram_multi_tb.sdram.ba1.wcnt[3:0]
 @200
 -ba2
-@22
+@23
 sdram_multi_tb.sdram.ba2.creq[3:0]
+@22
 sdram_multi_tb.sdram.ba2.dreq[3:0]
 @24
 sdram_multi_tb.sdram.ba2.st[3:0]
@@ -99,7 +99,6 @@ sdram_multi_tb.sdram.ba2.wcnt[3:0]
 @24
 sdram_multi_tb.sdram.bbsba[1:0]
 @22
-sdram_multi_tb.sdram.bbsst[3:0]
 sdram_multi_tb.sdram.bbscact[3:0]
 sdram_multi_tb.sdram.bbsdact[3:0]
 @28
